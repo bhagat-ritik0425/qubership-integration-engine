@@ -183,8 +183,6 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     private boolean enableStreamCaching;
     @Value("${qip.camel.component.rabbitmq.predeploy-check-enabled}")
     private boolean amqpPredeployCheckEnabled;
-    @Value("${qip.camel.component.sub-chains.predeploy-check-enabled}")
-    private boolean subChainsPredeployCheckEnabled;
 
     private final int streamCachingBufferSize;
 
