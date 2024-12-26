@@ -251,7 +251,6 @@ qip:
   local-truststore:
     store:
       path: /tmp/truststore/defaulttruststore.jks
-      password: ''
     certs:
       location: :/tmp/cert/${SSL_SECRET:defaultsslcertificate}
   production-mode:
