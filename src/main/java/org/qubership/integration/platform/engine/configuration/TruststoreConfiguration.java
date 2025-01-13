@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 @Configuration
 public class TruststoreConfiguration {
     public final String storeFilePath;
+    public final String storePassword;
     public final String certsLocation;
 
     private final String JAVA_HOME_PROPERTY = "java.home";
@@ -52,8 +53,10 @@ public class TruststoreConfiguration {
 
     @Autowired
     public TruststoreConfiguration(@Value("${qip.local-truststore.store.path}") String storeFilePath,
+                                   @Value("${qip.local-truststore.store.password}") String storePassword,
                                    @Value("${qip.local-truststore.certs.location}") String certsLocation) {
         this.storeFilePath = storeFilePath;
+        this.storePassword = storePassword;
         this.certsLocation = certsLocation;
     }
 
@@ -97,7 +100,7 @@ public class TruststoreConfiguration {
                 storeFile.getParentFile().mkdirs();
             }
             try (FileOutputStream fos = new FileOutputStream(storeFile, false)) {
-                keyStore.store(fos, new char[0]);
+                keyStore.store(fos, storePassword.toCharArray());
             }
         } catch (Exception e) {
             log.error("Failed to load trusted certificates from volume", e);
