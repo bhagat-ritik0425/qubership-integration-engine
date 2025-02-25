@@ -63,6 +63,12 @@ spring:
   jackson:
     serialization:
       indent-output: true
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USER:}
+      password: ${REDIS_PASSWORD:}
 
 app:
   prefix: qip
