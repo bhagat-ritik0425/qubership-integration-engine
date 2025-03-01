@@ -26,13 +26,23 @@ import org.springframework.stereotype.Component;
 
 import static java.util.Objects.nonNull;
 
+import java.util.Collection;
+import java.util.List;
+
 @Component
 public class ServletCustomFilterStrategy extends HttpHeaderFilterStrategy {
+    private static final Collection<String> FILTERED_HEADERS = List.of(
+        "span-id",
+        "trace-id",
+        "x-requestedsystem"
+    );
+
     private final Optional<ContextPropsProvider> contextPropsProvider;
 
     @Autowired
     public ServletCustomFilterStrategy(Optional<ContextPropsProvider> contextPropsProvider) {
         this.contextPropsProvider = contextPropsProvider;
+        this.getOutFilter().addAll(FILTERED_HEADERS);
     }
 
     @Override
