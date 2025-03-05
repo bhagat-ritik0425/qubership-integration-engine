@@ -65,6 +65,7 @@ public enum ChainElementType {
     SPLIT_ELEMENT_2("split-element-2"),
     CHAIN_TRIGGER("chain-trigger"),
     CHAIN_TRIGGER_2("chain-trigger-2"),
+    IDEMPOTET_CONSUMER("idempotent-consumer"),
     UNKNOWN("");
     // add more elements as needed
 
