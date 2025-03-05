@@ -46,10 +46,10 @@ public class IdempotentConsumerDependencyBinder extends ElementProcessingAction 
         String elementId = properties.getElementId();
         String consumerKey = elementId;
         IdempotentRepositoryKeyStrategy keyStrategy = new IdempotentRepositoryKeyStrategyBuilder()
-            .addString("dupcheck:")
-            .addString(consumerKey)
-            .addString(":")
-            .addIdempotencyKey()
+            .append("dupcheck:")
+            .append(consumerKey)
+            .append(":")
+            .appendIdempotencyKey()
             .build();
         IdempotentRepositoryKeyParameters keyParameters = IdempotentRepositoryKeyParameters.builder()
             // FIXME TTL

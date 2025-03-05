@@ -42,12 +42,12 @@ public class IdempotentRepositoryKeyStrategyBuilder {
         return this;
     }
 
-    public IdempotentRepositoryKeyStrategyBuilder addString(String string) {
+    public IdempotentRepositoryKeyStrategyBuilder append(String string) {
         getAppenders().add(context -> string);
         return this;
     }
 
-    public IdempotentRepositoryKeyStrategyBuilder addIdempotencyKey() {
+    public IdempotentRepositoryKeyStrategyBuilder appendIdempotencyKey() {
         getAppenders().add(BuildContext::idempotencyKey);
         return this;
     }
