@@ -51,6 +51,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.impl.debugger.DefaultDebugger;
 import org.apache.camel.model.StepDefinition;
 import org.apache.camel.spi.CamelEvent.*;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.ChainProperties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties.SERVICE_CALL_RETRY_COUNT;
 import static org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties.SERVICE_CALL_RETRY_DELAY;
 import static org.qubership.integration.platform.engine.util.CheckpointUtils.*;
+import static java.util.Objects.nonNull;
 
 @Slf4j
 @Component
@@ -681,7 +683,13 @@ public class CamelDebugger extends DefaultDebugger {
             exchangeContextPropagation.ifPresent(bean -> bean.initRequestContext(exchangeHeaders));
             getContextInitMarkers(exchange).add(currentThreadId);
             log.debug("New exchange created in thread '{}'", Thread.currentThread().getName());
-            exchangeContextPropagation.ifPresent(bean -> bean.removeContextHeaders(exchangeHeaders));
+            exchangeContextPropagation.ifPresent(bean -> {
+                Object authorization = exchangeHeaders.get(HttpHeaders.AUTHORIZATION);
+                bean.removeContextHeaders(exchangeHeaders);
+                if (nonNull(authorization)) {
+                    exchangeHeaders.put(HttpHeaders.AUTHORIZATION, authorization);
+                }
+            });
             Map<String, Object> snapshot = exchangeContextPropagation.isPresent() ?
                 exchangeContextPropagation.get().createContextSnapshot() : Collections.emptyMap();
             exchange.setProperty(CamelConstants.Properties.REQUEST_CONTEXT_PROPAGATION_SNAPSHOT, snapshot);
