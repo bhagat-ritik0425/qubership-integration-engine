@@ -2,13 +2,16 @@ package org.qubership.integration.platform.engine.configuration;
 
 import java.util.function.Function;
 
-import org.apache.camel.component.redis.processor.idempotent.RedisIdempotentRepository;
 import org.apache.camel.spi.IdempotentRepository;
+import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryParameters;
+import org.qubership.integration.platform.engine.camel.idempotency.RedisIdempotentRepository;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @AutoConfiguration
 public class RedisAutoConfiguration {
@@ -23,9 +26,10 @@ public class RedisAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "idempotentRepositoryFactory")
-    Function<String, IdempotentRepository> idempotentRepository(
-        RedisTemplate<String, String> redisTemplate
+    Function<IdempotentRepositoryParameters, IdempotentRepository> idempotentRepository(
+        RedisTemplate<String, String> redisTemplate,
+        ObjectMapper objectMapper
     ) {
-        return consumerKey -> new RedisIdempotentRepository(redisTemplate, consumerKey);
+        return keyParameters -> new RedisIdempotentRepository(redisTemplate, objectMapper, keyParameters);
     }
 }

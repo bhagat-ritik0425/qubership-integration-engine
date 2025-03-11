@@ -9,7 +9,7 @@ import lombok.Setter;
 @Builder(toBuilder = true)
 @Getter
 @Setter
-public class IdempotentRepositoryKeyParameters {
+public class IdempotentRepositoryParameters {
     private int ttl;
     private IdempotentRepositoryKeyStrategy keyStrategy;
 }

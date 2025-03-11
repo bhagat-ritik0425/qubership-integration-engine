@@ -11,16 +11,10 @@ public class IdempotentRepositoryKeyStrategyBuilder {
     private static record BuildContext(String idempotencyKey) {}
 
     private static class IdempotentRepositoryKeyStrategyImpl implements IdempotentRepositoryKeyStrategy {
-        private static final String GLOB = "*";
         private final List<Function<BuildContext, String>> appenders;
 
         public IdempotentRepositoryKeyStrategyImpl(List<Function<BuildContext, String>> appenders) {
             this.appenders = appenders;
-        }
-
-        @Override
-        public String getRepositoryKeyPattern() {
-            return buildForContext(new BuildContext(GLOB));
         }
 
         @Override
