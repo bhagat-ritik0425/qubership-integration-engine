@@ -3,13 +3,9 @@ package org.qubership.integration.platform.engine.camel.idempotency;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.Message;
 import org.apache.camel.component.redis.processor.idempotent.RedisStringIdempotentRepository;
-import org.qubership.integration.platform.engine.service.debugger.util.MessageHelper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
