@@ -15,11 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class KafkaTriggerIdempotencyKeyStrategyFactory extends IdempotencyKeyStrategyFactoryBase {
-    @Override
-    public Collection<ChainElementType> getElementTypes() {
-        return Set.of(ChainElementType.KAFKA_TRIGGER_2);
-    }
+public class RabbitMQTriggerIdempotencyKeyStrategyFactory extends IdempotencyKeyStrategyFactoryBase {
 
     @Override
     protected void configureStrategy(
@@ -29,13 +25,14 @@ public class KafkaTriggerIdempotencyKeyStrategyFactory extends IdempotencyKeyStr
     ) {
         Map<String, String> props = properties.getProperties();
         builder
-            .append("kafka:")
-            .append(props.get(ElementOptions.TOPICS))
+            .append("rabbit:")
+            .append(props.get(ElementOptions.EXCHANGE))
             .append(":")
-            .append(getGroupId(props));
+            .append(props.get(ElementOptions.QUEUES));
     }
 
-    private String getGroupId(Map<String, String> props) {
-        return props.get(ElementOptions.GROUP_ID); // TODO
+    @Override
+    public Collection<ChainElementType> getElementTypes() {
+        return Set.of(ChainElementType.RABBITMQ_TRIGGER_2);
     }
 }

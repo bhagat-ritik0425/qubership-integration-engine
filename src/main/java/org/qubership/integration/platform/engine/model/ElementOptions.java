@@ -35,6 +35,10 @@ public class ElementOptions {
     public static final String VHOST = "vhost";
     public static final String SSL = "sslProtocol";
 
+    // pubsub
+    public static final String PROJECT_ID = "projectId";
+    public static final String DESTINATION_NAME = "destinationName";
+
     public static final String CONNECTION_SOURCE_TYPE_PROP = "connectionSourceType";
 
     // generic maas

@@ -200,6 +200,8 @@ public final class CamelConstants {
         public static final String JMS_CONNECTION_FACTORY_NAME = "connectionFactoryName";
         public static final String JMS_USERNAME = "username";
         public static final String JMS_PASSWORD = "password";
+        public static final String JMS_DESTINATION_TYPE = "destinationType";
+        public static final String JMS_DESTINATION_NAME = "destinationName";
         public static final String SDS_JOB_ID = "jobId";
         public static final String SDS_CRON_EXPRESSION = "cron";
         public static final String SDS_FEATURE_PROHIBIT_PARALLEL_RUN = "prohibitParallelRun";
