@@ -1,31 +1,39 @@
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.spring.SpringCamelContext;
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryParameters;
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryKeyStrategy;
-import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryKeyStrategyBuilder;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.ChainProperties;
 import org.qubership.integration.platform.engine.model.deployment.update.DeploymentInfo;
 import org.qubership.integration.platform.engine.model.deployment.update.ElementProperties;
 import org.qubership.integration.platform.engine.service.deployment.processing.ElementProcessingAction;
+import org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create.idempotency.IdempotencyKeyStrategyFactory;
 import org.qubership.integration.platform.engine.service.deployment.processing.qualifiers.OnAfterDeploymentContextCreated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 @OnAfterDeploymentContextCreated
 public class IdempotentConsumerDependencyBinder extends ElementProcessingAction {
     private final Function<IdempotentRepositoryParameters, IdempotentRepository> idempotentRepositoryFactory;
+    private final Collection<IdempotencyKeyStrategyFactory> keyStrategyFactories;
     
     @Autowired
     public IdempotentConsumerDependencyBinder(
-        Function<IdempotentRepositoryParameters, IdempotentRepository> idempotentRepositoryFactory
+        Function<IdempotentRepositoryParameters, IdempotentRepository> idempotentRepositoryFactory,
+        Collection<IdempotencyKeyStrategyFactory> keyStrategyFactories
     ) {
         this.idempotentRepositoryFactory = idempotentRepositoryFactory;
+        this.keyStrategyFactories = keyStrategyFactories;
     }
 
     @Override
@@ -51,39 +59,24 @@ public class IdempotentConsumerDependencyBinder extends ElementProcessingAction 
         context.getRegistry().bind(elementId, idempotentRepository);
     }
 
-    private static IdempotentRepositoryKeyStrategy getKeyStrategy(
+    private IdempotentRepositoryKeyStrategy getKeyStrategy(
         ElementProperties properties,
         DeploymentInfo deploymentInfo
     ) {
-        String elementType = properties.getProperties().get(ChainProperties.ELEMENT_TYPE);
+        Map<String, String> props = properties.getProperties();
+        String elementType = props.get(ChainProperties.ELEMENT_TYPE);
         ChainElementType chainElementType = ChainElementType.fromString(elementType);
-        IdempotentRepositoryKeyStrategyBuilder builder = new IdempotentRepositoryKeyStrategyBuilder()
-            .append("dupcheck:")
-            .append(deploymentInfo.getChainId())
-            .append(":");
-        switch (chainElementType) {
-            case ChainElementType.HTTP_TRIGGER -> {
-                builder
-                    .append("http:")
-                    .append(properties.getProperties().get(ChainProperties.METHOD))
-                    .append(":")
-                    .append(properties.getProperties().get(ChainProperties.PATH));
-            }
-            case ChainElementType.KAFKA_TRIGGER_2 -> {
-                // TODO
-            }
-            case ChainElementType.RABBITMQ_TRIGGER_2 -> {
-                // TODO
-            }
-            case ChainElementType.ASYNCAPI_TRIGGER -> {
-                // TODO
-            }
-            default -> {}
-        }
-        return builder
-            .append(":")
-            .appendIdempotencyKey()
-            .build();
+        return keyStrategyFactories.stream()
+            .filter(factory -> factory.getElementTypes().contains(chainElementType))
+            .findFirst()
+            .map(factory -> factory.getStrategy(properties, deploymentInfo))
+            .orElseThrow(() -> {
+                String message = String.format(
+                    "Failed to find an idempotency key strategy factory for element type: %s",
+                    elementType
+                );
+                return new RuntimeException(message);
+        });
     }
 
 }
