@@ -32,10 +32,6 @@ public class KafkaTriggerIdempotencyKeyStrategyFactory extends IdempotencyKeyStr
             .append("kafka:")
             .append(props.get(ElementOptions.TOPICS))
             .append(":")
-            .append(getGroupId(props));
-    }
-
-    private String getGroupId(Map<String, String> props) {
-        return props.get(ElementOptions.GROUP_ID); // TODO
+            .append(props.get(ElementOptions.GROUP_ID));
     }
 }
