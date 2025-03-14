@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @AutoConfiguration
 public class RedisAutoConfiguration {
+    private static final String IDEMPOTENT_REPOSITORY_KEY_PROPERTY = "IdempotentRepositoryKey";
+
     @Bean
     RedisTemplate<String, String> redisTemplate(
         RedisConnectionFactory redisConnectionFactory
@@ -33,6 +35,11 @@ public class RedisAutoConfiguration {
         RedisTemplate<String, String> redisTemplate,
         ObjectMapper objectMapper
     ) {
-        return keyParameters -> new RedisIdempotentRepository(redisTemplate, objectMapper, keyParameters);
+        return keyParameters -> new RedisIdempotentRepository(
+            redisTemplate,
+            objectMapper,
+            keyParameters,
+            (key, exchange) -> exchange.setProperty(IDEMPOTENT_REPOSITORY_KEY_PROPERTY, key)
+        );
     }
 }

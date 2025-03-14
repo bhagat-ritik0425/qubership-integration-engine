@@ -1,8 +1,11 @@
 package org.qubership.integration.platform.engine.camel.idempotency;
 
+import static java.util.Objects.nonNull;
+
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.BiConsumer;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.component.redis.processor.idempotent.RedisStringIdempotentRepository;
@@ -19,16 +22,19 @@ public class RedisIdempotentRepository extends RedisStringIdempotentRepository {
     private final IdempotentRepositoryParameters keyParameters;
     private final ObjectMapper objectMapper;
     private final ValueOperations<String, String> valueOperations;
+    private final BiConsumer<String, Exchange> onKeyAdd;
 
     public RedisIdempotentRepository(
         RedisTemplate<String, String> redisTemplate,
         ObjectMapper objectMapper,
-        IdempotentRepositoryParameters keyParameters
+        IdempotentRepositoryParameters keyParameters,
+        BiConsumer<String, Exchange> onKeyAdd
     ) {
         super(redisTemplate, null);
         setExpiry(keyParameters.getTtl());
         this.objectMapper = objectMapper;
         this.keyParameters = keyParameters;
+        this.onKeyAdd = onKeyAdd;
         this.valueOperations = redisTemplate.opsForValue();
     }
 
@@ -39,12 +45,16 @@ public class RedisIdempotentRepository extends RedisStringIdempotentRepository {
 
     @Override
     public boolean add(Exchange exchange, String key) {
+        String redisKey = createRedisKey(key);
         String value = createRedisValue(exchange);
+        if (nonNull(onKeyAdd)) {
+            onKeyAdd.accept(redisKey, exchange);
+        }
         if (keyParameters.getTtl() > 0) {
             Duration expiry = Duration.ofSeconds(keyParameters.getTtl());
-            return valueOperations.setIfAbsent(createRedisKey(key), value, expiry);
+            return valueOperations.setIfAbsent(redisKey, value, expiry);
         }
-        return valueOperations.setIfAbsent(createRedisKey(key), value);
+        return valueOperations.setIfAbsent(redisKey, value);
     }
 
     protected String createRedisValue(Exchange exchange) {
