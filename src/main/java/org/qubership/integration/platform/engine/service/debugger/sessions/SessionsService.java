@@ -16,6 +16,11 @@
 
 package org.qubership.integration.platform.engine.service.debugger.sessions;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.Session;
 import org.qubership.integration.platform.engine.model.SessionElementProperty;
@@ -30,12 +35,6 @@ import org.qubership.integration.platform.engine.service.ExecutionStatus;
 import org.qubership.integration.platform.engine.service.debugger.util.DebuggerUtils;
 import org.qubership.integration.platform.engine.service.debugger.util.PayloadExtractor;
 import org.qubership.integration.platform.engine.util.IdentifierUtils;
-import java.util.concurrent.locks.ReadWriteLock;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.camel.Exchange;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
@@ -44,6 +43,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import static org.qubership.integration.platform.engine.camel.CorrelationIdSetter.CORRELATION_ID;
 import static org.qubership.integration.platform.engine.model.constants.CamelConstants.ChainProperties.HAS_INTERMEDIATE_PARENTS;
@@ -225,15 +225,14 @@ public class SessionsService {
                         .map(String::trim)
                         .toList();
                 for (String id : parentIds) {
-                    if (((Map<String, String>) exchange.getProperty(Properties.ELEMENT_EXECUTION_MAP)).
-                            containsKey(id)) {
+                    if (((Map<String, String>) exchange.getProperty(Properties.ELEMENT_EXECUTION_MAP))
+                                .containsKey(id)) {
 
                         sessionElement.setParentElementId(((Map<String, String>) exchange.getProperty(
                                 Properties.ELEMENT_EXECUTION_MAP)).get(id));
                     }
                 }
-            }
-            else {
+            } else {
                 sessionElement.setParentElementId(extractParentId(exchange, sessionId, elementStepProperties));
             }
             sessionElement.setChainElementId(stepId);
@@ -384,10 +383,9 @@ public class SessionsService {
         sessionElement.setContextAfter(extractor.convertToJson(contextHeaders));
         Exception exception = exchange.getException() != null ? exchange.getException() : externalException;
 
-        if (ChainElementType.isExceptionHandleElement(
-            ChainElementType.fromString(sessionElement.getCamelElementName())) &&
-            exception == null &&
-            Boolean.TRUE.equals(exchange.getProperty(Properties.ELEMENT_WARNING, Boolean.class))) {
+        if (ChainElementType.isExceptionHandleElement(ChainElementType.fromString(sessionElement.getCamelElementName()))
+                    && exception == null
+                    && Boolean.TRUE.equals(exchange.getProperty(Properties.ELEMENT_WARNING, Boolean.class))) {
             sessionElement.setExecutionStatus(ExecutionStatus.COMPLETED_WITH_WARNINGS);
         } else {
             sessionElement.setExecutionStatus(exception != null
@@ -416,8 +414,9 @@ public class SessionsService {
             Pair<ReadWriteLock, Session> sessionPair = writer.getSessionFromCache(exchange.getProperty(
                     Properties.SESSION_ID).toString());
             String correlationId = String.valueOf(exchange.getProperty(CORRELATION_ID));
-            if (sessionPair != null && sessionPair.getRight() != null)
+            if (sessionPair != null && sessionPair.getRight() != null) {
                 sessionPair.getRight().setCorrelationId(correlationId);
+            }
         }
     }
 

@@ -19,8 +19,11 @@ package org.qubership.integration.platform.engine.camel.converters;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.camel.Exchange;
+import org.apache.camel.NoTypeConversionAvailableException;
+import org.apache.camel.TypeConversionException;
+import org.apache.camel.TypeConverter;
 import org.qubership.integration.platform.engine.security.QipSecurityAccessPolicy;
-import org.apache.camel.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -29,7 +32,7 @@ import java.util.List;
 
 @Component
 public class SecurityAccessPolicyConverter implements TypeConverter {
-    private static final TypeReference<List<String>> stringListTypeReference = new TypeReference<>() {};
+    private static final TypeReference<List<String>> STRING_LIST_TYPE_REFERENCE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
 
@@ -46,7 +49,7 @@ public class SecurityAccessPolicyConverter implements TypeConverter {
     @Override
     public <T> T convertTo(Class<T> type, Object value) throws TypeConversionException {
         try {
-            List<String> attributes = objectMapper.readValue(value.toString(), stringListTypeReference);
+            List<String> attributes = objectMapper.readValue(value.toString(), STRING_LIST_TYPE_REFERENCE);
             return (T) QipSecurityAccessPolicy.fromStrings(attributes);
         } catch (JsonProcessingException exception) {
             throw new TypeConversionException(value, type, exception);

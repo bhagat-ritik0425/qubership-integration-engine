@@ -16,10 +16,10 @@
 
 package org.qubership.integration.platform.engine.camel.processors;
 
-import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.commons.lang3.StringUtils;
+import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -43,8 +43,8 @@ public class RequestFilterProcessor implements Processor {
 
         Map<String, Object> headers = exchange.getMessage().getHeaders();
         for (Map.Entry<String, String> filter : headerAllowList.entrySet()) {
-            if (!headers.containsKey(filter.getKey()) ||
-                    (!StringUtils.isBlank(filter.getValue()) && !headers.get(filter.getKey()).toString().equals(filter.getValue()))) {
+            if (!headers.containsKey(filter.getKey())
+                    || (!StringUtils.isBlank(filter.getValue()) && !headers.get(filter.getKey()).toString().equals(filter.getValue()))) {
                 terminateExchange(exchange);
             }
         }

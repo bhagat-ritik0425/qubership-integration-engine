@@ -16,9 +16,9 @@
 
 package org.qubership.integration.platform.engine.security;
 
+import org.apache.camel.Exchange;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties;
 import org.qubership.integration.platform.engine.util.DevModeUtil;
-import org.apache.camel.Exchange;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.ConfigAttribute;
@@ -56,8 +56,8 @@ public class ExchangeRolesVoter implements AccessDecisionVoter<Exchange> {
     @Override
     public int vote(Authentication authentication, Exchange object, Collection<ConfigAttribute> attributes) {
         QipSecurityAccessPolicy accessPolicy = extractSecurityPolicy(object);
-        return isNull(accessPolicy) || devModeUtil.isDevMode() ?
-                ACCESS_GRANTED
+        return isNull(accessPolicy) || devModeUtil.isDevMode()
+                ? ACCESS_GRANTED
                 : roleVoter.vote(authentication, object, accessPolicy.getConfigAttributes());
     }
 

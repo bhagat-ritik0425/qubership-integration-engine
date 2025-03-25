@@ -18,7 +18,6 @@ package org.qubership.integration.platform.engine.service.externallibrary;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.language.groovy.GroovyShellFactory;
@@ -26,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import static java.util.Objects.isNull;
 
@@ -41,9 +41,10 @@ public class ExternalLibraryGroovyShellFactory implements GroovyShellFactory {
 
     @Override
     public GroovyShell createGroovyShell(Exchange exchange) {
-        log.debug("Requesting groovy shell for {}", isNull(exchange)? Collections.emptyMap() : exchange.getProperties());
-        GroovyClassLoader groovyClassLoader = new GroovyClassLoader(externalLibraryService.isPresent() ?
-            externalLibraryService.get().getShellClassLoader() : getClass().getClassLoader());
+        log.debug("Requesting groovy shell for {}", isNull(exchange) ? Collections.emptyMap() : exchange.getProperties());
+        GroovyClassLoader groovyClassLoader = new GroovyClassLoader(externalLibraryService.isPresent()
+                ? externalLibraryService.get().getShellClassLoader()
+                : getClass().getClassLoader());
         return new GroovyShell(groovyClassLoader);
     }
 }

@@ -17,12 +17,12 @@
 package org.qubership.integration.platform.engine.camel.processors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.qubership.integration.platform.engine.model.constants.CamelConstants.Headers;
-import org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.util.json.JsonObject;
 import org.apache.commons.lang3.StringUtils;
+import org.qubership.integration.platform.engine.model.constants.CamelConstants.Headers;
+import org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -40,9 +40,9 @@ public class GraphQLVariablesProcessor implements Processor {
     public void process(Exchange exchange) throws Exception {
         String variablesJSON = exchange.getProperty(Properties.GQL_VARIABLES_JSON, String.class);
 
-        JsonObject variables = StringUtils.isNotEmpty(variablesJSON) ?
-                objectMapper.readValue(variablesJSON, JsonObject.class) :
-                new JsonObject();
+        JsonObject variables = StringUtils.isNotEmpty(variablesJSON)
+                ? objectMapper.readValue(variablesJSON, JsonObject.class)
+                : new JsonObject();
 
         exchange.getMessage().setHeader(Headers.GQL_VARIABLES_HEADER, variables);
     }

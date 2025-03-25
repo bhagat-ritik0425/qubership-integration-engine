@@ -18,12 +18,12 @@ package org.qubership.integration.platform.engine.persistence.shared.repository;
 
 import org.qubership.integration.platform.engine.persistence.shared.entity.SessionInfo;
 import org.qubership.integration.platform.engine.service.ExecutionStatus;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface SessionInfoRepository extends JpaRepository<SessionInfo, String> {
     List<SessionInfo> findAllByChainIdAndExecutionStatus(String chainId, ExecutionStatus status);
@@ -69,6 +69,7 @@ public interface SessionInfoRepository extends JpaRepository<SessionInfo, String
 
     /**
      * Remove old records for scheduled cleanup task
+     *
      * @param olderThan interval string, for example: '1 hour', '7 days', '2 years 3 month'
      */
     @Modifying

@@ -16,8 +16,8 @@
 
 package org.qubership.integration.platform.engine.healthcheck;
 
-import org.qubership.integration.platform.engine.consul.DeploymentReadinessService;
 import lombok.extern.slf4j.Slf4j;
+import org.qubership.integration.platform.engine.consul.DeploymentReadinessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.availability.ReadinessStateHealthIndicator;
 import org.springframework.boot.availability.ApplicationAvailability;
@@ -39,8 +39,8 @@ public class DeploymentsHealthIndicator extends ReadinessStateHealthIndicator {
 
     @Override
     protected AvailabilityState getState(ApplicationAvailability applicationAvailability) {
-        return deploymentReadinessService.isInitialized() ?
-            super.getState(applicationAvailability) :
-            ReadinessState.REFUSING_TRAFFIC;
+        return deploymentReadinessService.isInitialized()
+                ? super.getState(applicationAvailability)
+                : ReadinessState.REFUSING_TRAFFIC;
     }
 }

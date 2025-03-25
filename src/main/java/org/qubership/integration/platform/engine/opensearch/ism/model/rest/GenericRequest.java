@@ -20,12 +20,12 @@ import org.opensearch.client.opensearch.generic.Body;
 import org.opensearch.client.opensearch.generic.Request;
 import org.opensearch.client.transport.GenericSerializable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.*;
+import javax.annotation.Nullable;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -41,6 +41,7 @@ public class GenericRequest implements GenericSerializable, Request {
 
     /**
      * Create the {@linkplain GenericRequest}.
+     *
      * @param method the HTTP method
      * @param endpoint the path of the request (without scheme, host, port, or prefix)
      * @param headers list of headers
@@ -51,6 +52,7 @@ public class GenericRequest implements GenericSerializable, Request {
 
     /**
      * Create the {@linkplain GenericRequest}.
+     *
      * @param method the HTTP method
      * @param endpoint the path of the request (without scheme, host, port, or prefix)
      * @param headers list of headers
@@ -130,6 +132,7 @@ public class GenericRequest implements GenericSerializable, Request {
 
     /**
      * Compare two requests for equality
+     *
      * @param obj request instance to compare with
      */
     @Override

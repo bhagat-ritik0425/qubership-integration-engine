@@ -17,15 +17,15 @@
 package org.qubership.integration.platform.engine.service.debugger.metrics;
 
 import com.google.common.collect.Maps;
-import org.qubership.integration.platform.engine.configuration.ServerConfiguration;
-import org.qubership.integration.platform.engine.errorhandling.errorcode.ErrorCode;
-import org.qubership.integration.platform.engine.model.ChainElementType;
-import org.qubership.integration.platform.engine.persistence.shared.entity.ChainDataAllocationSize;
 import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.binder.BaseUnits;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.qubership.integration.platform.engine.configuration.ServerConfiguration;
+import org.qubership.integration.platform.engine.errorhandling.errorcode.ErrorCode;
+import org.qubership.integration.platform.engine.model.ChainElementType;
+import org.qubership.integration.platform.engine.persistence.shared.entity.ChainDataAllocationSize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -390,6 +390,7 @@ public class MetricsStore {
      *   <li>Checkpoint context saved data in engine PostgreSQL DB </li>
      *</ul>
      * For chains not presented in current inbound date metric value should be set to 0
+     *
      * @param metricName cip_engine_chain_session_size | cip_engine_chain_checkpoint_size
      * @param metricMap gauge references map chainId__chainName, AtomicLong (Gauge reference)
      * @param chainDataAllocationSizes current chains measurements

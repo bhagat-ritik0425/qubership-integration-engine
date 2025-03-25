@@ -24,16 +24,11 @@ import io.atlasmap.core.DefaultAtlasSession;
 import io.atlasmap.expression.Expression;
 import io.atlasmap.expression.ExpressionException;
 import io.atlasmap.spi.AtlasModule;
-import io.atlasmap.v2.AtlasModelFactory;
-import io.atlasmap.v2.AuditStatus;
-import io.atlasmap.v2.ConstantField;
-import io.atlasmap.v2.Field;
-import io.atlasmap.v2.FieldGroup;
-import io.atlasmap.v2.PropertyField;
-import io.atlasmap.v2.SimpleField;
+import io.atlasmap.v2.*;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CustomAtlasExpressionProcessor extends DefaultAtlasExpressionProcessor {
@@ -90,7 +85,7 @@ public class CustomAtlasExpressionProcessor extends DefaultAtlasExpressionProces
                 }
             });
             if (answer instanceof Field) {
-                session.head().setSourceField((Field)answer);
+                session.head().setSourceField((Field) answer);
             } else {
                 Field from = session.head().getSourceField();
                 SimpleField to = new SimpleField();
