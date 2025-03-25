@@ -32,6 +32,7 @@ import org.qubership.integration.platform.engine.service.deployment.processing.E
 import org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create.idempotency.IdempotencyKeyStrategyFactory;
 import org.qubership.integration.platform.engine.service.deployment.processing.qualifiers.OnAfterDeploymentContextCreated;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @OnAfterDeploymentContextCreated
+@ConditionalOnProperty(value = "qip.idempotency.enabled", havingValue = "true", matchIfMissing = true)
 public class IdempotentConsumerDependencyBinder extends ElementProcessingAction {
     private final Function<IdempotentRepositoryParameters, IdempotentRepository> idempotentRepositoryFactory;
     private final Collection<IdempotencyKeyStrategyFactory> keyStrategyFactories;
