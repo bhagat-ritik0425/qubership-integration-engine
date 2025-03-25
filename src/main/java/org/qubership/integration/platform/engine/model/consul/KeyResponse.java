@@ -18,14 +18,10 @@ package org.qubership.integration.platform.engine.model.consul;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
@@ -53,8 +49,8 @@ public class KeyResponse {
     private long modifyIndex;
 
     public String getDecodedValue() {
-        return this.value == null ?
-                null :
-                new String(Base64.getDecoder().decode(this.value), StandardCharsets.UTF_8);
+        return this.value == null
+                ? null
+                : new String(Base64.getDecoder().decode(this.value), StandardCharsets.UTF_8);
     }
 }

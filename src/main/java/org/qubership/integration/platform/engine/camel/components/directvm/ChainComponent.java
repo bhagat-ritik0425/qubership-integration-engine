@@ -20,11 +20,14 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.spi.HeaderFilterStrategy;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
+import org.apache.camel.support.DefaultComponent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.camel.support.DefaultComponent;
 
 import static java.util.Objects.isNull;
 
@@ -34,7 +37,7 @@ import static java.util.Objects.isNull;
 @Component("cip-chain")
 public class ChainComponent extends DefaultComponent {
     // <key, consumers>
-    private static final ConcurrentMap<String, List<ChainConsumer>> consumers = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, List<ChainConsumer>> CONSUMERS = new ConcurrentHashMap<>();
 
     @Metadata(label = "producer", defaultValue = "true")
     private boolean block = true;
@@ -88,7 +91,7 @@ public class ChainComponent extends DefaultComponent {
     }
 
     private ConcurrentMap<String, List<ChainConsumer>> getConsumers() {
-        return consumers;
+        return CONSUMERS;
     }
 
     private static String getConsumerKey(String uri) {

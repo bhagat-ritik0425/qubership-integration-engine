@@ -17,13 +17,14 @@
 package org.qubership.integration.platform.engine.errorhandling.errorcode;
 
 
+import lombok.Getter;
 import org.qubership.integration.platform.engine.logging.constants.ContextHeaders;
 import org.qubership.integration.platform.engine.model.errorhandling.ErrorEntry;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
 
 @Getter
 public class ErrorCodeException extends RuntimeException {
@@ -56,8 +57,9 @@ public class ErrorCodeException extends RuntimeException {
     public String getMessage() {
         return String.format("[%s] %s",
             this.errorCode.getFormattedCode(),
-            compiledMessage != null ?
-                compiledMessage : this.errorCode.getPayload().getReason());
+            compiledMessage != null
+                    ? compiledMessage
+                    : this.errorCode.getPayload().getReason());
     }
 
     public ErrorEntry buildResponseObject() {

@@ -16,28 +16,20 @@
 
 package org.qubership.integration.platform.engine.mapper.atlasmap;
 
-import org.qubership.integration.platform.engine.mapper.atlasmap.expressions.CustomAtlasExpressionProcessor;
 import io.atlasmap.api.AtlasContextFactory.Format;
 import io.atlasmap.api.AtlasException;
 import io.atlasmap.api.AtlasSession;
-import io.atlasmap.core.AtlasPath;
-import io.atlasmap.core.AtlasUtil;
-import io.atlasmap.core.DefaultAtlasContext;
-import io.atlasmap.core.DefaultAtlasContextFactory;
-import io.atlasmap.core.DefaultAtlasSession;
+import io.atlasmap.core.*;
 import io.atlasmap.spi.AtlasModule;
 import io.atlasmap.spi.FieldDirection;
-import io.atlasmap.v2.AtlasMapping;
-import io.atlasmap.v2.AuditStatus;
-import io.atlasmap.v2.CopyTo;
-import io.atlasmap.v2.Field;
-import io.atlasmap.v2.FieldGroup;
-import io.atlasmap.v2.Mapping;
+import io.atlasmap.v2.*;
+import lombok.extern.slf4j.Slf4j;
+import org.qubership.integration.platform.engine.mapper.atlasmap.expressions.CustomAtlasExpressionProcessor;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CustomAtlasContext extends DefaultAtlasContext {
@@ -165,7 +157,7 @@ public class CustomAtlasContext extends DefaultAtlasContext {
                     List<AtlasPath.SegmentContext> segments = path.getCollectionSegments(true);
                     for (int i = 0; i < copyTo.getIndexes().size(); i++) {
                         if (i < segments.size()) { // In case there are too many indexes specified
-                            path.setCollectionIndex(i + 1, copyTo.getIndexes().get(i));// +1 since 0 is the root segment
+                            path.setCollectionIndex(i + 1, copyTo.getIndexes().get(i)); // +1 since 0 is the root segment
                         }
                     }
                     field.setPath(path.toString());
@@ -182,7 +174,7 @@ public class CustomAtlasContext extends DefaultAtlasContext {
             Field sourceField = sourceFields.get(i);
             session.head().setSourceField(sourceField);
             if (sourceField instanceof FieldGroup) {
-                processSourceFields(session, ((FieldGroup)sourceField).getField());
+                processSourceFields(session, ((FieldGroup) sourceField).getField());
                 Field processed = applyFieldActions(session, sourceField);
                 session.head().setSourceField(processed);
                 continue;

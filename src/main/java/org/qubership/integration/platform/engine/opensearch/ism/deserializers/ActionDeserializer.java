@@ -23,22 +23,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.Action;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ActionRetry;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.AllocationAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.CloseAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.DeleteAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ForceMergeAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.IndexPriorityAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.NotificationAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.OpenAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ReadOnlyAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ReadWriteAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ReplicaCountAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.RolloverAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.RollupAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.ShrinkAction;
-import org.qubership.integration.platform.engine.opensearch.ism.model.actions.SnapshotAction;
+import org.qubership.integration.platform.engine.opensearch.ism.model.actions.*;
 import org.qubership.integration.platform.engine.opensearch.ism.model.time.TimeValue;
 
 import java.io.IOException;
@@ -48,7 +33,7 @@ import java.util.Map;
 import static java.util.Objects.isNull;
 
 public class ActionDeserializer extends JsonDeserializer<Action> {
-    private static final Map<String, Class<? extends Action>> classMap = Map.ofEntries(
+    private static final Map<String, Class<? extends Action>> CLASS_MAP = Map.ofEntries(
             new AbstractMap.SimpleEntry<String, Class<? extends Action>>("force_merge", ForceMergeAction.class),
             new AbstractMap.SimpleEntry<String, Class<? extends Action>>("read_only", ReadOnlyAction.class),
             new AbstractMap.SimpleEntry<String, Class<? extends Action>>("read_write", ReadWriteAction.class),
@@ -82,7 +67,7 @@ public class ActionDeserializer extends JsonDeserializer<Action> {
     }
 
     private Action deserializeAction(JsonParser jsonParser, ObjectNode node) throws IOException, JacksonException {
-        Map.Entry<String, Class<? extends Action>> entry = classMap.entrySet().stream()
+        Map.Entry<String, Class<? extends Action>> entry = CLASS_MAP.entrySet().stream()
                 .filter(e -> node.has(e.getKey()))
                 .findFirst()
                 .orElseThrow(() -> InvalidFormatException.from(

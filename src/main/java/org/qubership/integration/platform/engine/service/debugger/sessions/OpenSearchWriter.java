@@ -19,41 +19,35 @@ package org.qubership.integration.platform.engine.service.debugger.sessions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.qubership.integration.platform.engine.configuration.opensearch.OpenSearchConfiguration;
-import org.qubership.integration.platform.engine.model.Session;
-import org.qubership.integration.platform.engine.model.opensearch.QueueElement;
-import org.qubership.integration.platform.engine.model.opensearch.SessionElementElastic;
-import org.qubership.integration.platform.engine.opensearch.OpenSearchClientSupplier;
-import org.qubership.integration.platform.engine.service.ExecutionStatus;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.BulkRequest;
 import org.opensearch.client.opensearch.core.BulkResponse;
 import org.opensearch.client.opensearch.core.bulk.BulkOperation;
 import org.opensearch.client.opensearch.core.bulk.BulkResponseItem;
 import org.opensearch.client.opensearch.core.bulk.IndexOperation;
+import org.qubership.integration.platform.engine.model.Session;
+import org.qubership.integration.platform.engine.model.opensearch.QueueElement;
+import org.qubership.integration.platform.engine.model.opensearch.SessionElementElastic;
+import org.qubership.integration.platform.engine.opensearch.OpenSearchClientSupplier;
+import org.qubership.integration.platform.engine.service.ExecutionStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.annotation.Nullable;
 
 @Slf4j
 @Component
@@ -132,7 +126,7 @@ public class OpenSearchWriter implements Runnable {
                 }
                 sessionElementsQueue.drainTo(elementsToSave, queueDrainThreshold - 1);
                 elementsToSave.forEach(element -> queueTotalPayloadSize.addAndGet(
-                    -element.getCalculatedPayloadSize()));
+                        -element.getCalculatedPayloadSize()));
                 LinkedHashSet<QueueElement> filteredElements = new LinkedHashSet<>(elementsToSave);
 
                 if (!CollectionUtils.isEmpty(filteredElements)) {
@@ -194,8 +188,8 @@ public class OpenSearchWriter implements Runnable {
                     }
 
                     needToExecuteBulk =
-                            bulkRequestSize >= bulkRequestMaxSizeBytes ||
-                                    (!iterator.hasNext() && !updateRequests.isEmpty());
+                            bulkRequestSize >= bulkRequestMaxSizeBytes
+                                    || (!iterator.hasNext() && !updateRequests.isEmpty());
 
                     if (needToExecuteBulk) {
                         waitBeforeRequest();
@@ -279,6 +273,7 @@ public class OpenSearchWriter implements Runnable {
         log.info("OpenSearch write timeout has been increased to {}", currentWriteTimeout);
     }
 
+    @SuppressWarnings("checkstyle:EmptyCatchBlock")
     private void waitBeforeRequest() {
         try {
             Thread.sleep(currentWriteTimeout);
@@ -288,6 +283,24 @@ public class OpenSearchWriter implements Runnable {
 
     public void scheduleElementToLog(SessionElementElastic element) {
         scheduleElementToLog(element, false);
+    }
+
+    private void scheduleElementToLog(SessionElementElastic element, boolean addToCache) {
+        long payloadSize = calculatePayloadSizeInBytes(element);
+        if (queueTotalPayloadSize.get() >= queueMaxSizeBytes
+                || !sessionElementsQueue.offer(
+                QueueElement.builder()
+                        .element(element)
+                        .calculatedPayloadSize(payloadSize)
+                        .build())) {
+            log.error("Queue of opensearch elements is full, element is not added");
+        } else {
+            queueTotalPayloadSize.addAndGet(payloadSize);
+        }
+
+        if (addToCache) {
+            putSessionElementToCache(element);
+        }
     }
 
     public void scheduleElementToLogAndCache(SessionElementElastic element) {
@@ -307,24 +320,6 @@ public class OpenSearchWriter implements Runnable {
         } else {
             element.setExecutionStatus(ExecutionStatus.CANCELLED_OR_UNKNOWN);
             scheduleElementToLog(element, false);
-        }
-    }
-
-    private void scheduleElementToLog(SessionElementElastic element, boolean addToCache) {
-        long payloadSize = calculatePayloadSizeInBytes(element);
-        if (queueTotalPayloadSize.get() >= queueMaxSizeBytes ||
-            !sessionElementsQueue.offer(
-                QueueElement.builder()
-                    .element(element)
-                    .calculatedPayloadSize(payloadSize)
-                    .build())) {
-            log.error("Queue of opensearch elements is full, element is not added");
-        } else {
-            queueTotalPayloadSize.addAndGet(payloadSize);
-        }
-
-        if (addToCache) {
-            putSessionElementToCache(element);
         }
     }
 

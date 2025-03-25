@@ -19,6 +19,10 @@ package org.qubership.integration.platform.engine.consul;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.qubership.integration.platform.engine.configuration.ServerConfiguration;
 import org.qubership.integration.platform.engine.events.ConsulSessionCreatedEvent;
 import org.qubership.integration.platform.engine.model.consul.KeyResponse;
@@ -27,21 +31,14 @@ import org.qubership.integration.platform.engine.model.deployment.engine.EngineS
 import org.qubership.integration.platform.engine.model.deployment.properties.DeploymentRuntimeProperties;
 import org.qubership.integration.platform.engine.model.kafka.systemmodel.CompiledLibraryUpdate;
 import org.qubership.integration.platform.engine.service.debugger.RuntimePropertiesException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.annotation.Nullable;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+
+import java.util.*;
+import javax.annotation.Nullable;
 
 @Slf4j
 @Component
@@ -118,8 +115,8 @@ public class ConsulService {
         this.applicationEventPublisher = applicationEventPublisher;
 
         EngineInfo engineInfo = serverConfiguration.getEngineInfo();
-        this.keyEngineName = "/" + engineInfo.getEngineDeploymentName() + "-" +
-            engineInfo.getDomain() + "-" + engineInfo.getHost();
+        this.keyEngineName = "/" + engineInfo.getEngineDeploymentName() + "-"
+                + engineInfo.getDomain() + "-" + engineInfo.getHost();
     }
 
     public synchronized void createOrRenewSession() {
@@ -210,9 +207,9 @@ public class ConsulService {
                 return Collections.emptyList();
             case 1:
                 String json = response.get(0).getDecodedValue();
-                return json == null ?
-                    Collections.emptyList() :
-                    objectMapper.readValue(json, new TypeReference<>() {});
+                return json == null
+                        ? Collections.emptyList()
+                        : objectMapper.readValue(json, new TypeReference<>() {});
         }
         throw new RuntimeException("Failed to parse response, target key in consul has invalid format/size: " + response);
     }
@@ -311,6 +308,7 @@ public class ConsulService {
 
     /**
      * Get last path word as a key and decode value
+     *
      * @return key and value
      */
     private Pair<String, String> parseCommonVariable(KeyResponse k) {
