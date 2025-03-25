@@ -22,29 +22,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import org.qubership.integration.platform.engine.errorhandling.LoggingMaskingException;
-import org.qubership.integration.platform.engine.model.SessionElementProperty;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.qubership.integration.platform.engine.errorhandling.LoggingMaskingException;
+import org.qubership.integration.platform.engine.model.SessionElementProperty;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -57,6 +38,21 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 @Slf4j
 @Component
@@ -79,8 +75,8 @@ public class MaskingService {
                 "Content type is empty, failed to mask fields in payload");
         }
 
-        if (MimeTypeUtils.APPLICATION_JSON.equalsTypeAndSubtype(contentType) ||
-            JSON_PATCH_JSON_CONTENT_TYPE.equalsTypeAndSubtype(contentType)
+        if (MimeTypeUtils.APPLICATION_JSON.equalsTypeAndSubtype(contentType)
+                || JSON_PATCH_JSON_CONTENT_TYPE.equalsTypeAndSubtype(contentType)
         ) {
             try {
                 return maskJSON(target, fields);
@@ -90,9 +86,9 @@ public class MaskingService {
             }
         }
 
-        if (MimeTypeUtils.APPLICATION_XML.equalsTypeAndSubtype(contentType) ||
-            MimeTypeUtils.TEXT_XML.equalsTypeAndSubtype(contentType) ||
-            SOAP_XML_CONTENT_TYPE.equalsTypeAndSubtype(contentType)
+        if (MimeTypeUtils.APPLICATION_XML.equalsTypeAndSubtype(contentType)
+                || MimeTypeUtils.TEXT_XML.equalsTypeAndSubtype(contentType)
+                || SOAP_XML_CONTENT_TYPE.equalsTypeAndSubtype(contentType)
         ) {
             try {
                 return maskXML(target, fields);
@@ -115,18 +111,18 @@ public class MaskingService {
             "Content type " + contentType.toString() + " not supported for masking");
     }
 
+    public void maskFields(Map<String, String> target, Set<String> maskedFields) {
+        for (String field : maskedFields) {
+            target.computeIfPresent(field, (key, value) -> CamelConstants.MASKING_TEMPLATE);
+        }
+    }
+
     public void maskPropertiesFields(Map<String, SessionElementProperty> target, Set<String> maskedFields) {
         for (String field : maskedFields) {
             target.computeIfPresent(field, (key, value) -> {
                 value.setValue(CamelConstants.MASKING_TEMPLATE);
                 return value;
             });
-        }
-    }
-
-    public void maskFields(Map<String, String> target, Set<String> maskedFields) {
-        for (String field : maskedFields) {
-            target.computeIfPresent(field, (key, value) -> CamelConstants.MASKING_TEMPLATE);
         }
     }
 

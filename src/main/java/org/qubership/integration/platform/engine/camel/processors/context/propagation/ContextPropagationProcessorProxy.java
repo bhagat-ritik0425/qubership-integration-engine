@@ -16,13 +16,14 @@
 
 package org.qubership.integration.platform.engine.camel.processors.context.propagation;
 
-import org.qubership.integration.platform.engine.camel.processors.OptionalProcessorProxy;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Processor;
+import org.qubership.integration.platform.engine.camel.processors.OptionalProcessorProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 
 @Slf4j
@@ -31,7 +32,7 @@ public class ContextPropagationProcessorProxy extends OptionalProcessorProxy {
 
     @Autowired
     public ContextPropagationProcessorProxy(
-        @Qualifier("сontextPropagationProcessorImpl") Optional<Processor> processor
+        @Qualifier("contextPropagationProcessorImpl") Optional<Processor> processor
     ) {
         super(processor);
     }

@@ -16,11 +16,7 @@
 
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.before;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.spring.SpringCamelContext;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.common.KafkaException;
@@ -39,7 +35,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Component
@@ -97,12 +97,10 @@ public class KafkaTopicAndConnectionCheckAction extends ElementProcessingAction 
             Set<String> topics;
             try (AdminClient client = AdminClient.create(validationKafkaAdminConfig)) {
                 Set<String> kafkaTopics = client.listTopics().names().get();
-                String[] topicsArray = topicsString.split(",");
-                topics = new HashSet<>();
-                if (topicsArray.length == 0) {
+                topics = new HashSet<>(List.of(topicsString.split(",")));
+                if (topics.isEmpty()) {
                     throw new KafkaException("Topic property can't be empty");
                 }
-                topics.add(topicsArray[0]); // take only first topic from string
                 topics.removeAll(kafkaTopics);
             }
 
@@ -120,12 +118,12 @@ public class KafkaTopicAndConnectionCheckAction extends ElementProcessingAction 
                     "Kafka predeploy check is failed with AuthorizationException. Exception not thrown",
                     e);
             } else {
-                log.warn("Kafka predeploy check is failed. " +
-                        "Connection configuration is invalid, topics not found or broker is unavailable",
+                log.warn("Kafka predeploy check is failed. "
+                            + "Connection configuration is invalid, topics not found or broker is unavailable",
                     e);
                 throw new DeploymentRetriableException(
-                    "Kafka predeploy check is failed. " +
-                        "Connection configuration is invalid, topics not found or broker is unavailable",
+                    "Kafka predeploy check is failed. "
+                            + "Connection configuration is invalid, topics not found or broker is unavailable",
                     e);
             }
         } catch (DeploymentRetriableException e) {

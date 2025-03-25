@@ -18,6 +18,12 @@ package org.qubership.integration.platform.engine.camel.processors.checkpoint;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
+import org.apache.camel.Processor;
+import org.apache.commons.lang3.StringUtils;
 import org.qubership.integration.platform.engine.camel.components.context.propagation.ContextOperationsWrapper;
 import org.qubership.integration.platform.engine.model.checkpoint.CheckpointPayloadOptions;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties;
@@ -27,21 +33,14 @@ import org.qubership.integration.platform.engine.persistence.shared.entity.Sessi
 import org.qubership.integration.platform.engine.service.CheckpointSessionService;
 import org.qubership.integration.platform.engine.service.debugger.util.MessageHelper;
 import org.qubership.integration.platform.engine.util.CheckpointUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.Processor;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
@@ -74,8 +73,8 @@ public class ContextLoaderProcessor implements Processor {
                 log.error("Can't find checkpoint with session id: {}, checkpoint id: {}", checkpointInfo.sessionId(),
                         checkpointInfo.checkpointElementId());
                 throw new EntityNotFoundException(
-                        "Can't find checkpoint with session id: " + checkpointInfo.sessionId() +
-                                ", checkpoint id: " + checkpointInfo.checkpointElementId());
+                        "Can't find checkpoint with session id: " + checkpointInfo.sessionId()
+                                + ", checkpoint id: " + checkpointInfo.checkpointElementId());
             }
 
             CheckpointPayloadOptions replaceOptions = parseReplaceOptions(exchange);
@@ -96,9 +95,9 @@ public class ContextLoaderProcessor implements Processor {
     private CheckpointPayloadOptions parseReplaceOptions(Exchange exchange) throws Exception {
         String body = MessageHelper.extractBody(exchange);
         try {
-            return StringUtils.isNotEmpty(body) ?
-                    checkpointMapper.readValue(body, CheckpointPayloadOptions.class) :
-                    CheckpointPayloadOptions.EMPTY;
+            return StringUtils.isNotEmpty(body)
+                    ? checkpointMapper.readValue(body, CheckpointPayloadOptions.class)
+                    : CheckpointPayloadOptions.EMPTY;
         } catch (Exception e) {
             log.error("Failed to parse checkpoint options from retry request", e);
             throw new RuntimeException("Failed to parse checkpoint options from retry request", e);

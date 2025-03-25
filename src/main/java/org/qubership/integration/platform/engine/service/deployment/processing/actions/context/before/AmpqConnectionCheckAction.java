@@ -16,9 +16,10 @@
 
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.before;
 
-import java.io.IOException;
-import java.util.Map;
-
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.spring.SpringCamelContext;
 import org.apache.commons.lang3.StringUtils;
 import org.qubership.integration.platform.engine.errorhandling.DeploymentRetriableException;
@@ -32,21 +33,18 @@ import org.qubership.integration.platform.engine.model.deployment.update.Element
 import org.qubership.integration.platform.engine.service.VariablesService;
 import org.qubership.integration.platform.engine.service.deployment.processing.ElementProcessingAction;
 import org.qubership.integration.platform.engine.service.deployment.processing.qualifiers.OnBeforeDeploymentContextCreated;
-import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.Map;
 
 @Slf4j
 @Component
 @ConditionalOnProperty(
     name = "qip.camel.component.rabbitmq.predeploy-check-enabled",
-    havingValue="true",
+    havingValue = "true",
     matchIfMissing = true
 )
 @OnBeforeDeploymentContextCreated
@@ -111,8 +109,7 @@ public class AmpqConnectionCheckAction extends ElementProcessingAction {
 
             ConnectionFactory factory = new ConnectionFactory();
 
-            factory.setUri((StringUtils.isNotBlank(ssl) && ssl.equals("true") ?
-                "amqps://" : "amqp://") + addresses);
+            factory.setUri((StringUtils.isNotBlank(ssl) && ssl.equals("true") ? "amqps://" : "amqp://") + addresses);
 
             if (StringUtils.isNotBlank(username)) {
                 factory.setUsername(username);
@@ -137,9 +134,8 @@ public class AmpqConnectionCheckAction extends ElementProcessingAction {
                     }
                 } catch (IOException e) {
                     throw new DeploymentRetriableException(
-                        "AMQP " + (isProducerElement ?
-                            ("exchange " + exchange) : ("queue(s) " + queues)) +
-                            " not found, check configuration");
+                        "AMQP " + (isProducerElement ? ("exchange " + exchange) : ("queue(s) " + queues))
+                                + " not found, check configuration");
                 }
             } catch (IOException e) {
                 throw new DeploymentRetriableException(
