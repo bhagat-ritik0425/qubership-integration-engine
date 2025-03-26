@@ -16,22 +16,20 @@
 
 package org.qubership.integration.platform.engine.camel.idempotency;
 
-import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
+import org.apache.camel.component.redis.processor.idempotent.RedisStringIdempotentRepository;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.BiConsumer;
 
-import org.apache.camel.Exchange;
-import org.apache.camel.component.redis.processor.idempotent.RedisStringIdempotentRepository;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import lombok.extern.slf4j.Slf4j;
+import static java.util.Objects.nonNull;
 
 @Slf4j
 public class RedisIdempotentRepository extends RedisStringIdempotentRepository {

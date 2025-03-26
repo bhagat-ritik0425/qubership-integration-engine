@@ -16,16 +16,16 @@
 
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create.idempotency;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryKeyStrategyBuilder;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.ElementOptions;
 import org.qubership.integration.platform.engine.model.deployment.update.DeploymentInfo;
 import org.qubership.integration.platform.engine.model.deployment.update.ElementProperties;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class PubSubTriggerIdempotencyKeyStrategyFactory extends IdempotencyKeyStrategyFactoryBase {

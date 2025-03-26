@@ -1,5 +1,6 @@
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.before;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.spring.SpringCamelContext;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.ChainProperties;
@@ -9,9 +10,6 @@ import org.qubership.integration.platform.engine.service.deployment.processing.E
 import org.qubership.integration.platform.engine.service.deployment.processing.qualifiers.OnBeforeDeploymentContextCreated;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-
-import jakarta.websocket.DeploymentException;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
