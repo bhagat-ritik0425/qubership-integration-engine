@@ -36,6 +36,6 @@ public class IdempotencyStateCheckAction extends ElementProcessingAction {
         ElementProperties properties,
         DeploymentInfo deploymentInfo
     ) {
-        throw new RuntimeException("Idempotency support is disabled");
+        throw new RuntimeException("Idempotency support is disabled on environment");
     }
 }
