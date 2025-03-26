@@ -16,14 +16,11 @@
 
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.function.Function;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.spring.SpringCamelContext;
-import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryParameters;
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryKeyStrategy;
+import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryParameters;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.ChainProperties;
 import org.qubership.integration.platform.engine.model.deployment.update.DeploymentInfo;
@@ -35,7 +32,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.Collection;
+import java.util.Map;
+import java.util.function.Function;
 
 @Slf4j
 @Component

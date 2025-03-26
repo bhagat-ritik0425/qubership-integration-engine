@@ -16,10 +16,6 @@
 
 package org.qubership.integration.platform.engine.service.deployment.processing.actions.context.create.idempotency;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryKeyStrategyBuilder;
 import org.qubership.integration.platform.engine.model.ChainElementType;
 import org.qubership.integration.platform.engine.model.ElementOptions;
@@ -28,6 +24,10 @@ import org.qubership.integration.platform.engine.model.deployment.update.Element
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)

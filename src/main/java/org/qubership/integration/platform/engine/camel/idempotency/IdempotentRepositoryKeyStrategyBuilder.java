@@ -16,12 +16,12 @@
 
 package org.qubership.integration.platform.engine.camel.idempotency;
 
-import static java.util.Objects.isNull;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.isNull;
 
 public class IdempotentRepositoryKeyStrategyBuilder {
     private static record BuildContext(String idempotencyKey) {}

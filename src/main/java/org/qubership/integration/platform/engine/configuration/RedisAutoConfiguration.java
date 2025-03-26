@@ -16,8 +16,7 @@
 
 package org.qubership.integration.platform.engine.configuration;
 
-import java.util.function.Function;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.spi.IdempotentRepository;
 import org.qubership.integration.platform.engine.camel.idempotency.IdempotentRepositoryParameters;
 import org.qubership.integration.platform.engine.camel.idempotency.RedisIdempotentRepository;
@@ -29,7 +28,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.function.Function;
 
 @AutoConfiguration
 @ConditionalOnProperty(value = "qip.idempotency.enabled", havingValue = "true", matchIfMissing = true)

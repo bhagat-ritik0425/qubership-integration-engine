@@ -16,13 +16,12 @@
 
 package org.qubership.integration.platform.engine.camel.idempotency;
 
-import java.sql.Timestamp;
-import java.util.Map;
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.sql.Timestamp;
 
 @Data
 @Getter
