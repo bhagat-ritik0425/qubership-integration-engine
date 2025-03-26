@@ -16,17 +16,21 @@
 
 package org.qubership.integration.platform.engine.jms.weblogic;
 
+import org.springframework.beans.factory.InitializingBean;
+
 import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-import org.springframework.beans.factory.InitializingBean;
-
 public interface WeblogicSecurityBean extends InitializingBean {
     void setSecurityPrincipal(String securityPrincipal);
+
     void setProviderUrl(String providerUrl);
+
     void setSecurityCredentials(String securityCredentials);
+
     void runPrivilegedExceptionActionAsSubject(PrivilegedExceptionAction privilegedExceptionAction) throws IOException, PrivilegedActionException;
+
     void runPrivilegedActionAsSubject(PrivilegedAction privilegedAction) throws IOException;
 }

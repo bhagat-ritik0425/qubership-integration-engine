@@ -16,14 +16,14 @@
 
 package org.qubership.integration.platform.engine.mapper.atlasmap.expressions;
 
-import static io.atlasmap.v2.AtlasModelFactory.wrapWithField;
-
 import io.atlasmap.expression.Expression;
 import io.atlasmap.expression.ExpressionContext;
 import io.atlasmap.expression.ExpressionException;
 import io.atlasmap.expression.internal.ArithmeticExpression;
 import io.atlasmap.v2.Field;
 import io.atlasmap.v2.FieldType;
+
+import static io.atlasmap.v2.AtlasModelFactory.wrapWithField;
 
 /**
  * Change default `+` operator behavior for string variables
@@ -62,9 +62,9 @@ public abstract class CustomPlusArithmeticExpression extends ArithmeticExpressio
         Field lfield = left.evaluate(message);
         Field rfield = right.evaluate(message);
 
-        if (lfield == null || rfield == null ||
-            (lfield.getFieldType() != null && lfield.getFieldType() != FieldType.STRING) ||
-            (lfield.getFieldType() == null && !(lfield.getValue() instanceof String))
+        if (lfield == null || rfield == null
+                || (lfield.getFieldType() != null && lfield.getFieldType() != FieldType.STRING)
+                || (lfield.getFieldType() == null && !(lfield.getValue() instanceof String))
         ) {
             // default branch
             if (lfield == null || lfield.getValue() == null) {
