@@ -76,7 +76,7 @@ app:
 management:
   endpoints:
     probe:
-      readiness: deployments, smartplug # list of custom probes
+      readiness: deployments
     web:
       exposure:
         exclude: shutdown
