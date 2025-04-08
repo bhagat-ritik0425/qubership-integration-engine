@@ -17,15 +17,16 @@
 package org.qubership.integration.platform.engine.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.CamelContext;
 import org.apache.camel.Consumer;
 import org.apache.camel.Endpoint;
 import org.apache.camel.Route;
 import org.apache.camel.component.file.remote.SftpConsumer;
 import org.apache.camel.component.file.remote.SftpEndpoint;
 import org.apache.camel.component.quartz.QuartzEndpoint;
+import org.apache.camel.model.RouteDefinition;
 import org.apache.camel.pollconsumer.quartz.QuartzScheduledPollConsumerScheduler;
 import org.apache.camel.spi.ScheduledPollConsumerScheduler;
-import org.apache.camel.spring.SpringCamelContext;
 import org.quartz.*;
 import org.qubership.integration.platform.engine.camel.scheduler.StdSchedulerFactoryProxy;
 import org.qubership.integration.platform.engine.camel.scheduler.StdSchedulerProxy;
@@ -34,8 +35,8 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -62,58 +63,45 @@ public class QuartzSchedulerService {
         }
     }
 
-    public void removeSchedulerJobsFromContext(SpringCamelContext context) {
-        try {
-            getFactory().getScheduler().deleteJobs(getSchedulerJobsFromContext(context));
-        } catch (SchedulerException e) {
-            log.error("Failed to delete scheduler jobs", e);
-        }
-    }
-
-    public void removeSchedulerJobsFromContexts(List<SpringCamelContext> contexts) {
+    public void removeSchedulerJobsFromRoutes(List<RouteDefinition> routes, CamelContext context) {
         try {
             log.debug("Remove camel scheduler jobs from contexts");
-            if (!contexts.isEmpty()) {
-                getFactory().getScheduler().deleteJobs(getSchedulerJobsFromContexts(contexts));
+            if (!routes.isEmpty()) {
+                getFactory().getScheduler().deleteJobs(getSchedulerJobsFromContexts(routes, context));
             }
         } catch (SchedulerException e) {
             log.error("Failed to delete scheduler jobs", e);
         }
     }
 
-    public List<JobKey> getSchedulerJobsFromContext(SpringCamelContext context) {
-        return getSchedulerJobsFromContexts(Collections.singletonList(context));
-    }
-
-    public List<JobKey> getSchedulerJobsFromContexts(List<SpringCamelContext> contexts) {
+    public List<JobKey> getSchedulerJobsFromContexts(List<RouteDefinition> routes, CamelContext context) {
         List<JobKey> jobs = new ArrayList<>();
-        log.debug("Get camel scheduler jobs from contexts");
-        for (SpringCamelContext context : contexts) {
-            for (Endpoint endpoint : context.getEndpoints()) {
-                if (endpoint instanceof QuartzEndpoint quartzEndpoint) {
-                    TriggerKey triggerKey = quartzEndpoint.getTriggerKey();
-                    // assumption: groupName and triggerName have been set in the Quartz component
-                    JobKey jobKey = JobKey.jobKey(triggerKey.getName(), triggerKey.getGroup());
-                    jobs.add(jobKey);
-                    continue;
-                }
+        log.debug("Get camel scheduler jobs from routes");
+        for (var routeDefinition : routes) {
+            Route route = context.getRoute(routeDefinition.getRouteId());
+            Endpoint endpoint = Optional.ofNullable(context.getRoute(routeDefinition.getRouteId())).map(Route::getEndpoint).orElse(null);
 
-                if (endpoint instanceof SftpEndpoint) {
-                    for (Route route : context.getRoutes()) {
-                        Consumer consumer = route.getConsumer();
-                        if (consumer instanceof SftpConsumer sftpConsumer) {
-                            ScheduledPollConsumerScheduler scheduler = sftpConsumer.getScheduler();
+            if (endpoint instanceof QuartzEndpoint quartzEndpoint) {
+                TriggerKey triggerKey = quartzEndpoint.getTriggerKey();
+                // assumption: groupName and triggerName have been set in the Quartz component
+                JobKey jobKey = JobKey.jobKey(triggerKey.getName(), triggerKey.getGroup());
+                jobs.add(jobKey);
+                continue;
+            }
 
-                            if (scheduler instanceof QuartzScheduledPollConsumerScheduler quartzScheduler) {
-                                try {
-                                    Field f = quartzScheduler.getClass().getDeclaredField("job");
-                                    f.setAccessible(true);
-                                    JobKey jobKey = ((JobDetail) f.get(quartzScheduler)).getKey();
-                                    jobs.add(jobKey);
-                                } catch (Exception e) {
-                                    log.error("Failed to get field 'job' from class QuartzScheduledPollConsumerScheduler");
-                                }
-                            }
+            if (endpoint instanceof SftpEndpoint) {
+                Consumer consumer = route.getConsumer();
+                if (consumer instanceof SftpConsumer sftpConsumer) {
+                    ScheduledPollConsumerScheduler scheduler = sftpConsumer.getScheduler();
+
+                    if (scheduler instanceof QuartzScheduledPollConsumerScheduler quartzScheduler) {
+                        try {
+                            Field f = quartzScheduler.getClass().getDeclaredField("job");
+                            f.setAccessible(true);
+                            JobKey jobKey = ((JobDetail) f.get(quartzScheduler)).getKey();
+                            jobs.add(jobKey);
+                        } catch (Exception e) {
+                            log.error("Failed to get field 'job' from class QuartzScheduledPollConsumerScheduler");
                         }
                     }
                 }

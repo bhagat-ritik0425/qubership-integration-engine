@@ -16,6 +16,14 @@
 
 package org.qubership.integration.platform.engine.service.debugger;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.camel.Exchange;
+import org.apache.camel.NamedNode;
+import org.apache.camel.Processor;
+import org.apache.camel.impl.debugger.DefaultDebugger;
+import org.apache.camel.model.StepDefinition;
+import org.apache.camel.spi.CamelEvent.*;
+import org.apache.hc.core5.http.HttpHeaders;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -55,8 +63,6 @@ import org.qubership.integration.platform.engine.service.debugger.util.DebuggerU
 import org.qubership.integration.platform.engine.service.debugger.util.PayloadExtractor;
 import org.qubership.integration.platform.engine.util.IdentifierUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -66,12 +72,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nullable;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.nonNull;
 import static org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties.*;
 import static org.qubership.integration.platform.engine.util.CheckpointUtils.*;
 
 @Slf4j
 @Component
-@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class CamelDebugger extends DefaultDebugger {
 
     private final ServerConfiguration serverConfiguration;
@@ -83,25 +89,22 @@ public class CamelDebugger extends DefaultDebugger {
     private final SessionsService sessionsService;
     private final PayloadExtractor payloadExtractor;
     private final VariablesService variablesService;
-    private final CamelDebuggerPropertiesService propertiesService;
+    private final DeploymentRuntimePropertiesService propertiesService;
     private final Optional<CamelExchangeContextPropagation> exchangeContextPropagation;
-    @Setter
-    @Getter
-    private String deploymentId;
+
 
     @Autowired
-    public CamelDebugger(
-            ServerConfiguration serverConfiguration,
-            TracingService tracingService,
-            CheckpointSessionService checkpointSessionService,
-            MetricsService metricsService,
-            ChainLogger chainLogger,
-            Optional<SessionsKafkaReportingService> sessionsKafkaReportingService,
-            SessionsService sessionsService,
-            PayloadExtractor payloadExtractor,
-            VariablesService variablesService,
-            CamelDebuggerPropertiesService propertiesService,
-            Optional<CamelExchangeContextPropagation> exchangeContextPropagation
+    public CamelDebugger(ServerConfiguration serverConfiguration,
+        TracingService tracingService,
+        CheckpointSessionService checkpointSessionService,
+        MetricsService metricsService,
+        ChainLogger chainLogger,
+        Optional<SessionsKafkaReportingService> sessionsKafkaReportingService,
+        SessionsService sessionsService,
+        PayloadExtractor payloadExtractor,
+        VariablesService variablesService,
+        DeploymentRuntimePropertiesService propertiesService,
+        Optional<CamelExchangeContextPropagation> exchangeContextPropagation
     ) {
         this.serverConfiguration = serverConfiguration;
         this.tracingService = tracingService;
@@ -695,8 +698,7 @@ public class CamelDebugger extends DefaultDebugger {
                 }
             });
             Map<String, Object> snapshot = exchangeContextPropagation.isPresent()
-                    ? exchangeContextPropagation.get().createContextSnapshot()
-                    : Collections.emptyMap();
+                    ? exchangeContextPropagation.get().createContextSnapshot() : Collections.emptyMap();
             exchange.setProperty(CamelConstants.Properties.REQUEST_CONTEXT_PROPAGATION_SNAPSHOT, snapshot);
         }
     }
@@ -745,10 +747,10 @@ public class CamelDebugger extends DefaultDebugger {
     }
 
     public CamelDebuggerProperties getRelatedProperties(Exchange exchange) {
-        return propertiesService.getProperties(exchange, deploymentId);
+        return propertiesService.getProperties(exchange);
     }
 
-    public CamelDebuggerProperties getRelatedProperties() {
+    public CamelDebuggerProperties getRelatedProperties(String deploymentId) {
         return propertiesService.getActualProperties(deploymentId);
     }
 

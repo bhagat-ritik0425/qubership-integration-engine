@@ -27,7 +27,7 @@ import org.qubership.integration.platform.engine.service.CheckpointSessionServic
 import org.qubership.integration.platform.engine.service.DeploymentsUpdateService;
 import org.qubership.integration.platform.engine.service.IntegrationRuntimeService;
 import org.qubership.integration.platform.engine.service.VariablesService;
-import org.qubership.integration.platform.engine.service.debugger.CamelDebuggerPropertiesService;
+import org.qubership.integration.platform.engine.service.debugger.DeploymentRuntimePropertiesService;
 import org.qubership.integration.platform.engine.service.externallibrary.ExternalLibraryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +50,7 @@ public class TasksScheduler {
     private final ConsulService consulService;
     private final DeploymentsUpdateService deploymentsUpdateService;
     private final Optional<ExternalLibraryService> externalLibraryService;
-    private final CamelDebuggerPropertiesService debuggerPropertiesService;
+    private final DeploymentRuntimePropertiesService debuggerPropertiesService;
 
     @Value("${qip.sessions.checkpoints.cleanup.interval}")
     private String checkpointsInterval;
@@ -63,7 +63,7 @@ public class TasksScheduler {
                             ConsulService consulService,
                             DeploymentsUpdateService deploymentsUpdateService,
                             Optional<ExternalLibraryService> externalLibraryService,
-                            CamelDebuggerPropertiesService debuggerPropertiesService) {
+                            DeploymentRuntimePropertiesService debuggerPropertiesService) {
         this.variableService = variableService;
         this.runtimeService = runtimeService;
         this.checkpointSessionService = checkpointSessionService;

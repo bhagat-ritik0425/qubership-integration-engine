@@ -35,10 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Slf4j
@@ -147,7 +144,7 @@ public class SessionsMetricsService {
                         ChainDataAllocationSize chainCheckpointSize = ChainDataAllocationSize.builder()
                                 .chainId((String) row[0])
                                 .chainName((String) row[1])
-                                .allocatedSize(Long.parseLong(row[2].toString()))
+                                .allocatedSize(Long.parseLong(Optional.ofNullable(row[2]).map(Object::toString).orElse("0")))
                                 .build();
 
                         chainCheckpointSizes.add(chainCheckpointSize);

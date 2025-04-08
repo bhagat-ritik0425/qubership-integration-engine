@@ -26,11 +26,9 @@ import org.apache.camel.observation.starter.ObservationConfigurationProperties;
 import org.qubership.integration.platform.engine.service.debugger.tracing.MicrometerObservationTaggedTracer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
 
 @Slf4j
 @Configuration
@@ -45,7 +43,6 @@ public class TracingConfiguration {
      * Based on {@link ObservationAutoConfiguration}
      */
     @Bean(initMethod = "", destroyMethod = "")
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     MicrometerObservationTracer camelObservationTracer(
         ObservationConfigurationProperties config,
         ObjectProvider<Tracer> tracer,

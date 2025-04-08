@@ -25,8 +25,7 @@ import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.qubership.integration.platform.engine.model.deployment.properties.CamelDebuggerProperties;
 import org.qubership.integration.platform.engine.model.deployment.properties.DeploymentRuntimeProperties;
 import org.qubership.integration.platform.engine.model.logging.LogPayload;
-import org.qubership.integration.platform.engine.service.debugger.CamelDebugger;
-import org.qubership.integration.platform.engine.service.debugger.CamelDebuggerPropertiesService;
+import org.qubership.integration.platform.engine.service.debugger.DeploymentRuntimePropertiesService;
 import org.qubership.integration.platform.engine.service.debugger.logging.ChainLogger;
 import org.qubership.integration.platform.engine.service.debugger.metrics.MetricsService;
 import org.qubership.integration.platform.engine.service.debugger.util.PayloadExtractor;
@@ -41,13 +40,13 @@ import java.util.Set;
 @Component
 public class HttpTriggerFinishProcessor implements Processor {
 
-    private final CamelDebuggerPropertiesService propertiesService;
+    private final DeploymentRuntimePropertiesService propertiesService;
     private final PayloadExtractor payloadExtractor;
     private final ChainLogger chainLogger;
     private final MetricsService metricsService;
 
     @Autowired
-    public HttpTriggerFinishProcessor(CamelDebuggerPropertiesService propertiesService,
+    public HttpTriggerFinishProcessor(DeploymentRuntimePropertiesService propertiesService,
                                       PayloadExtractor payloadExtractor,
                                       ChainLogger chainLogger,
                                       MetricsService metricsService) {
@@ -124,7 +123,6 @@ public class HttpTriggerFinishProcessor implements Processor {
     }
 
     private CamelDebuggerProperties getCamelDebuggerProperties(Exchange exchange) {
-        CamelDebugger camelDebugger = ((CamelDebugger) exchange.getContext().getDebugger());
-        return propertiesService.getProperties(exchange, camelDebugger.getDeploymentId());
+        return propertiesService.getProperties(exchange);
     }
 }

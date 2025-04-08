@@ -20,13 +20,11 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.camel.spring.SpringCamelContext;
+import org.apache.camel.model.RouteDefinition;
 import org.qubership.integration.platform.engine.model.deployment.engine.EngineDeployment;
 import org.qubership.integration.platform.engine.model.deployment.update.DeploymentUpdate;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,8 +37,9 @@ public class RuntimeIntegrationCache {
     @Getter(AccessLevel.NONE)
     private final ConcurrentMap<String, Lock> chainLocks = new ConcurrentHashMap<>(); // <chainId, lock>
 
-    private final ConcurrentMap<String, SpringCamelContext> contexts = new ConcurrentHashMap<>(); // <deploymentId, context>
     private final ConcurrentMap<String, EngineDeployment> deployments = new ConcurrentHashMap<>(); // <deploymentId, deployment>
+    private final ConcurrentMap<String, List<RouteDefinition>> deploymentRoutes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<String>> deploymentSystemModelIds = new ConcurrentHashMap<>();
 
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
@@ -70,5 +69,21 @@ public class RuntimeIntegrationCache {
             collection.removeIf(deployment -> deploymentId.equals(deployment.getDeploymentInfo().getDeploymentId()));
             return collection;
         });
+    }
+
+    public void cleanForDeployment(String deploymentId) {
+        //deployments.remove(deploymentId); // TODO check do we need it
+        deploymentRoutes.remove(deploymentId);
+        deploymentSystemModelIds.remove(deploymentId);
+    }
+
+    public Optional<String> getDeploymentIdByRouteId(String routeId) {
+        for (Map.Entry<String, List<RouteDefinition>> routesByDeployment : deploymentRoutes.entrySet()) {
+            List<RouteDefinition> routes = routesByDeployment.getValue();
+            if (routes.stream().anyMatch(route -> route.getRouteId().equals(routeId))) {
+                return Optional.of(routesByDeployment.getKey());
+            }
+        }
+        return Optional.empty();
     }
 }

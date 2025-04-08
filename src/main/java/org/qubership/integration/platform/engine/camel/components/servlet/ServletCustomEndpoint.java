@@ -19,6 +19,7 @@ package org.qubership.integration.platform.engine.camel.components.servlet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Category;
 import org.apache.camel.Consumer;
+import org.apache.camel.MultipleConsumersSupport;
 import org.apache.camel.Processor;
 import org.apache.camel.component.servlet.ServletComponent;
 import org.apache.camel.component.servlet.ServletConsumer;
@@ -40,7 +41,7 @@ import java.util.UUID;
         title = "Servlet",
         syntax = "servlet-custom:contextPath", consumerOnly = true, category = { Category.HTTP }
 )
-public class ServletCustomEndpoint extends ServletEndpoint {
+public class ServletCustomEndpoint extends ServletEndpoint implements MultipleConsumersSupport {
     @UriParam(label = "advanced", description = "Metric tags provider")
     private ServletTagsProvider tagsProvider;
 
@@ -78,5 +79,10 @@ public class ServletCustomEndpoint extends ServletEndpoint {
         ServletConsumer answer = new ServletCustomConsumer(this, processor);
         configureConsumer(answer);
         return answer;
+    }
+
+    @Override
+    public boolean isMultipleConsumersSupported() {
+        return true;
     }
 }

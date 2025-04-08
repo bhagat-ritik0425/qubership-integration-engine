@@ -179,6 +179,7 @@ public final class CamelConstants {
         public static final String ACTUAL_CHAIN_OVERRIDE_STEP_NAME_FIELD = "actualElementChainIdOverrideForStep";
         public static final String HAS_INTERMEDIATE_PARENTS = "hasIntermediateParents";
         public static final String REUSE_ORIGINAL_ID = "reuseOriginalId";
+        public static final String DEPLOYMENT_ID = "deploymentId";
 
         public static final String CONTAINS_CHECKPOINT_ELEMENTS = "containsCheckpointElements";
         public static final String WIRE_TAP_ID = "wireTapId";

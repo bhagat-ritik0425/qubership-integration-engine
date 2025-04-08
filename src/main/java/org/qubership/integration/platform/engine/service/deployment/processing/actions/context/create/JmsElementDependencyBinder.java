@@ -159,11 +159,11 @@ public class JmsElementDependencyBinder extends ElementProcessingAction {
 
         JmsComponent jmsComponent = new JmsComponent(jmsConfiguration);
 
-        String componentName = buildJmsComponentName(elementId, properties);
+        String componentName = buildJmsComponentName(elementId);
         context.addComponent(componentName, jmsComponent);
     }
 
-    private String buildJmsComponentName(String elementId, Map<String, String> properties) {
+    private String buildJmsComponentName(String elementId) {
         return String.format("jms-%s", elementId);
     }
 }

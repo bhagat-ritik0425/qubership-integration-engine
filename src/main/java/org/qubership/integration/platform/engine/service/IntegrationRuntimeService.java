@@ -18,6 +18,9 @@ package org.qubership.integration.platform.engine.service;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import lombok.Getter;
+import org.apache.camel.FailedToCreateRouteException;
+import org.apache.camel.FailedToStartRouteException;
 import org.apache.camel.component.jackson.JacksonConstants;
 import org.apache.camel.impl.engine.DefaultManagementStrategy;
 import org.apache.camel.impl.engine.DefaultStreamCachingStrategy;
@@ -25,11 +28,9 @@ import org.apache.camel.model.*;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.observation.MicrometerObservationTracer;
 import org.apache.camel.reifier.ProcessorReifier;
-import org.apache.camel.spi.ClassResolver;
 import org.apache.camel.spi.MessageHistoryFactory;
 import org.apache.camel.spring.SpringCamelContext;
 import org.apache.camel.tracing.Tracer;
-import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jetbrains.annotations.NotNull;
 import org.qubership.integration.platform.engine.camel.CustomResilienceReifier;
@@ -58,7 +59,7 @@ import org.qubership.integration.platform.engine.model.deployment.properties.Cam
 import org.qubership.integration.platform.engine.model.deployment.update.*;
 import org.qubership.integration.platform.engine.security.QipSecurityAccessPolicy;
 import org.qubership.integration.platform.engine.service.debugger.CamelDebugger;
-import org.qubership.integration.platform.engine.service.debugger.CamelDebuggerPropertiesService;
+import org.qubership.integration.platform.engine.service.debugger.DeploymentRuntimePropertiesService;
 import org.qubership.integration.platform.engine.service.debugger.metrics.MetricsStore;
 import org.qubership.integration.platform.engine.service.deployment.processing.DeploymentProcessingService;
 import org.qubership.integration.platform.engine.service.deployment.processing.actions.context.before.RegisterRoutesInControlPlaneAction;
@@ -69,6 +70,7 @@ import org.qubership.integration.platform.engine.service.xmlpreprocessor.XmlConf
 import org.qubership.integration.platform.engine.util.MDCUtil;
 import org.qubership.integration.platform.engine.util.log.ExtendedErrorLogger;
 import org.qubership.integration.platform.engine.util.log.ExtendedErrorLoggerFactory;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -77,6 +79,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.io.ByteArrayInputStream;
 import java.net.URISyntaxException;
@@ -111,17 +114,18 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     private final Optional<XmlConfigurationPreProcessor> xmlPreProcessor;
     private final VariablesService variablesService;
     private final EngineStateReporter engineStateReporter;
-    private final CamelDebuggerPropertiesService propertiesService;
+    private final DeploymentRuntimePropertiesService propertiesService;
     private final DeploymentReadinessService deploymentReadinessService;
-
+    private final CamelDebugger camelDebugger;
+    private final FormDataConverter formDataConverter;
+    private final SecurityAccessPolicyConverter securityAccessPolicyConverter;
+    private final Optional<MicrometerObservationTracer> camelObservationTracer;
     private final Predicate<FilteringEntity> camelMessageHistoryFilter;
 
     private final RuntimeIntegrationCache deploymentCache = new RuntimeIntegrationCache();
     private final ReadWriteLock processLock = new ReentrantReadWriteLock();
 
     private final Executor deploymentExecutor;
-
-    private ApplicationContext applicationContext;
 
     private final DeploymentProcessingService deploymentProcessingService;
 
@@ -136,6 +140,8 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     private boolean enableStreamCaching;
 
     private final int streamCachingBufferSize;
+    @Getter
+    private SpringCamelContext camelContext;
 
     @Autowired
     public IntegrationRuntimeService(ServerConfiguration serverConfiguration,
@@ -150,11 +156,15 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
         VariablesService variablesService,
         EngineStateReporter engineStateReporter,
         @Qualifier("deploymentExecutor") Executor deploymentExecutor,
-        CamelDebuggerPropertiesService propertiesService,
+        DeploymentRuntimePropertiesService propertiesService,
         @Value("${qip.camel.stream-caching.buffer.size-kb}") int streamCachingBufferSizeKb,
         Predicate<FilteringEntity> camelMessageHistoryFilter,
         DeploymentReadinessService deploymentReadinessService,
-        DeploymentProcessingService deploymentProcessingService
+        DeploymentProcessingService deploymentProcessingService,
+        CamelDebugger camelDebugger,
+        FormDataConverter formDataConverter,
+        SecurityAccessPolicyConverter securityAccessPolicyConverter,
+        Optional<MicrometerObservationTracer> camelObservationTracer
     ) {
         this.serverConfiguration = serverConfiguration;
         this.quartzSchedulerService = quartzSchedulerService;
@@ -176,11 +186,16 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
 
         this.deploymentReadinessService = deploymentReadinessService;
         this.deploymentProcessingService = deploymentProcessingService;
+        this.camelDebugger = camelDebugger;
+        this.formDataConverter = formDataConverter;
+        this.securityAccessPolicyConverter = securityAccessPolicyConverter;
+        this.camelObservationTracer = camelObservationTracer;
+
     }
 
     @Override
     public void setApplicationContext(@NotNull ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+        this.camelContext = buildContext(applicationContext);
     }
 
     @Async
@@ -370,6 +385,7 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
                     }
                     case REMOVED -> {
                         getCache().getDeployments().remove(deploymentId);
+                        getCache().cleanForDeployment(deploymentId);
                         removeRetryingDeployment(deploymentId);
                         propertiesService.removeDeployProperties(deploymentId);
                         metricsStore.removeChainsDeployments(deploymentId);
@@ -414,37 +430,31 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
             .properties(configuration.getProperties())
             .build());
 
-        SpringCamelContext context = getCache().getContexts().get(deploymentId);
-        if (context != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Context for deployment {} already exists", deploymentId);
-            }
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Creating context for deployment {}", deploymentId);
-        }
-        context = buildContext(deploymentInfo, configuration, configurationXml);
-        getCache().getContexts().put(deploymentId, context);
+        List<RouteDefinition> deployedRoutes = enrichContextWithDeployment(deploymentInfo, configuration, configurationXml);
 
-        List<Pair<DeploymentInfo, SpringCamelContext>> contextsToStop = getContextsRelatedToDeployment(
+        List<DeploymentInfo> deploymentIdsToStop = getDeploymentsRelatedToDeployment(
             deployment,
             state -> !state.getDeploymentInfo().getDeploymentId()
                 .equals(deployment.getDeploymentInfo().getDeploymentId())
         );
 
         try {
-            startContext(context);
+            if (deploymentReadinessService.isInitialized()) {
+                startRoutes(deployedRoutes, deploymentInfo.getDeploymentId());
+            }
         } catch (Exception e) {
             quartzSchedulerService.commitScheduledJobs();
-            deploymentProcessingService.processStopContext(context, deploymentInfo, configuration);
+            deploymentProcessingService.processStopContext(camelContext, deploymentInfo, configuration);
+            getCache().cleanForDeployment(deploymentInfo.getDeploymentId());
+            refreshClassResolver();
             throw e;
         }
 
-        contextsToStop.stream().forEach(p -> stopDeploymentContext(p.getRight(), p.getLeft()));
+        deploymentIdsToStop.forEach(this::stopDeploymentContext);
 
         quartzSchedulerService.commitScheduledJobs();
         if (log.isDebugEnabled()) {
-            log.debug("Context for deployment {} has started", deploymentId);
+            log.debug("Deployment {} has started", deploymentId);
         }
         return DeploymentStatus.DEPLOYED;
     }
@@ -492,7 +502,7 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     ) {
         Iterator<Map.Entry<String, EngineDeployment>> iterator = getCache().getDeployments()
             .entrySet().iterator();
-        List<Pair<DeploymentInfo, SpringCamelContext>> contextsToRemove = new ArrayList<>();
+        List<DeploymentInfo> deploymentContextsToRemove = new ArrayList<>();
         while (iterator.hasNext()) {
             Map.Entry<String, EngineDeployment> entry = iterator.next();
 
@@ -501,11 +511,7 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
                     && statusPredicate.test(entry.getValue().getStatus())
                     && !depInfo.getDeploymentId().equals(deployment.getDeploymentInfo().getDeploymentId())) {
 
-                SpringCamelContext toRemoveContext = getCache().getContexts()
-                    .remove(entry.getKey());
-                if (toRemoveContext != null) {
-                    contextsToRemove.add(Pair.of(depInfo, toRemoveContext));
-                }
+                deploymentContextsToRemove.add(depInfo);
 
                 removeRetryingDeployment(depInfo.getDeploymentId());
 
@@ -516,11 +522,10 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
             }
         }
 
-        contextsToRemove.stream().filter(p -> p.getRight().isRunning())
-            .forEach(p -> stopDeploymentContext(p.getRight(), p.getLeft()));
+        deploymentContextsToRemove.forEach(this::stopDeploymentContext);
     }
 
-    private List<Pair<DeploymentInfo, SpringCamelContext>> getContextsRelatedToDeployment(
+    private List<DeploymentInfo> getDeploymentsRelatedToDeployment(
         DeploymentUpdate deployment,
         Predicate<EngineDeployment> filter
     ) {
@@ -528,48 +533,32 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
             .filter(entry -> entry.getValue().getDeploymentInfo().getChainId()
                 .equals(deployment.getDeploymentInfo().getChainId())
                 && filter.test(entry.getValue()))
-            .map(entry -> Pair.of(
-                    entry.getValue().getDeploymentInfo(),
-                    getCache().getContexts().get(entry.getKey())))
+            .map(Entry::getValue)
+            .map(EngineDeployment::getDeploymentInfo)
             .toList();
     }
 
-    private SpringCamelContext buildContext(
-        DeploymentInfo deploymentInfo,
-        DeploymentConfiguration deploymentConfiguration,
-        String configurationXml
-    ) throws Exception {
+    private SpringCamelContext buildContext(ApplicationContext applicationContext) {
         SpringCamelContext context = new SpringCamelContext(applicationContext);
 
         context.getTypeConverterRegistry().addTypeConverter(
-            FormData.class,
-            String.class,
-            applicationContext.getBean(FormDataConverter.class));
+                FormData.class,
+                String.class,
+                formDataConverter);
         context.getTypeConverterRegistry().addTypeConverter(
-            QipSecurityAccessPolicy.class,
-            String.class,
-            applicationContext.getBean(SecurityAccessPolicyConverter.class));
+                QipSecurityAccessPolicy.class,
+                String.class,
+                securityAccessPolicyConverter);
+
         context.getGlobalOptions().put(JacksonConstants.ENABLE_TYPE_CONVERTER, "true");
         context.getGlobalOptions().put(JacksonConstants.TYPE_CONVERTER_TO_POJO, "true");
         context.getInflightRepository().setInflightBrowseEnabled(true);
 
-        boolean deploymentsSuspended = isDeploymentsSuspended();
-        if (deploymentsSuspended) {
-            context.setAutoStartup(false);
-            log.debug("Deployment {} will be suspended due to pod initialization", deploymentInfo.getDeploymentId());
-        }
-
-        context.setClassResolver(getClassResolver(context, deploymentConfiguration));
-
-        context.setApplicationContext(applicationContext);
-
-        String deploymentId = deploymentInfo.getDeploymentId();
-        context.setManagementName("camel-context_" + deploymentId); // use repeatable after restart context name
+        context.setManagementName("camel-context_singleton");
         context.setManagementStrategy(new DefaultManagementStrategy(context));
-
-        CamelDebugger debugger = applicationContext.getBean(CamelDebugger.class);
-        debugger.setDeploymentId(deploymentId);
-        context.setDebugger(debugger);
+        camelDebugger.stop();
+        context.setDebugger(camelDebugger);
+        camelDebugger.setCamelContext(context);
         context.setDebugging(true);
 
         configureMessageHistoryFactory(context);
@@ -581,41 +570,69 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
             context.setStreamCachingStrategy(streamCachingStrategy);
         }
 
-        deploymentProcessingService.processAfterContextCreated(context, deploymentInfo, deploymentConfiguration);
+        if (tracingConfiguration.isTracingEnabled()) {
+            Tracer tracer = camelObservationTracer.orElseThrow(() ->
+                    new UnsatisfiedDependencyException((String) null, (String) null, "camelObservationTracer", (String) null));
+            tracer.init(context);
+        }
 
-        this.loadRoutes(context, configurationXml);
         return context;
     }
 
-    private ClassResolver getClassResolver(
-        SpringCamelContext context,
-        DeploymentConfiguration deploymentConfiguration
+    private List<RouteDefinition> enrichContextWithDeployment(
+        DeploymentInfo deploymentInfo,
+        DeploymentConfiguration deploymentConfiguration,
+        String configurationXml
+    ) throws Exception {
+        enrichClassResolver(deploymentInfo.getDeploymentId(), deploymentConfiguration);
+        refreshClassResolver();
+
+        String deploymentId = deploymentInfo.getDeploymentId();
+
+        deploymentProcessingService.processAfterContextCreated(camelContext, deploymentInfo, deploymentConfiguration);
+
+        return loadRoutes(configurationXml, deploymentId);
+    }
+
+    private void refreshClassResolver() {
+        List<String> systemModelIds = getCache().getDeploymentSystemModelIds().values().stream().flatMap(List::stream).toList();
+        ClassLoader classLoader = externalLibraryService.isPresent()
+                ? externalLibraryService.get().getClassLoaderForSystemModels(systemModelIds, getClass().getClassLoader())
+                : getClass().getClassLoader();
+        camelContext.setClassResolver(new QipCustomClassResolver(classLoader));
+    }
+
+    private void enrichClassResolver(
+            String deploymentId,
+            DeploymentConfiguration deploymentConfiguration
     ) {
-        Collection<String> systemModelIds = deploymentConfiguration.getProperties().stream()
+        List<String> systemModelIds = deploymentConfiguration.getProperties().stream()
             .map(ElementProperties::getProperties)
             .filter(properties -> ChainProperties.SERVICE_CALL_ELEMENT.equals(properties.get(
                 ChainProperties.ELEMENT_TYPE)))
             .map(properties -> properties.get(ChainProperties.OPERATION_SPECIFICATION_ID))
             .filter(Objects::nonNull)
             .toList();
-        ClassLoader classLoader = externalLibraryService.isPresent()
-                ? externalLibraryService.get().getClassLoaderForSystemModels(systemModelIds, context.getApplicationContextClassLoader())
-                : getClass().getClassLoader();
-        return new QipCustomClassResolver(classLoader);
+        getCache().getDeploymentSystemModelIds().put(deploymentId, systemModelIds);
     }
 
-    private void startContext(SpringCamelContext context) {
-        if (tracingConfiguration.isTracingEnabled()) {
-            Tracer tracer = applicationContext.getBean("camelObservationTracer", MicrometerObservationTracer.class);
-            tracer.init(context);
+    private void startRoutes(List<RouteDefinition> routes, String deploymentId) {
+        if (routes == null) {
+            return;
         }
-
-        context.start();
-
-        CamelDebugger debugger = (CamelDebugger) context.getDebugger();
-        if (!debugger.isStartingOrStarted()) {
-            debugger.start();
-        }
+        routes.forEach(route -> {
+            try {
+                camelContext.startRoute(route.getId());
+            } catch (Exception e) {
+                try {
+                    camelContext.removeRouteDefinitions(routes);
+                } catch (Exception ignored) {
+                    // We did our best to remove bad route definitions
+                }
+                log.error("Unable to start routes for deployment {}", deploymentId, e);
+                throw new RuntimeException("Unable to start routes for deployment " + deploymentId, e);
+            }
+        });
     }
 
     private void configureMessageHistoryFactory(SpringCamelContext context) {
@@ -629,30 +646,35 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     /**
      * Upload routes to a new context from provided configuration
      */
-    private void loadRoutes(SpringCamelContext context, String xmlConfiguration) throws Exception {
+    private List<RouteDefinition> loadRoutes(String xmlConfiguration, String deploymentId) throws Exception {
         if (log.isDebugEnabled()) {
             log.debug("Loading routes from: \n{}", xmlConfiguration);
         }
 
         byte[] configurationBytes = xmlConfiguration.getBytes();
         ByteArrayInputStream configInputStream = new ByteArrayInputStream(configurationBytes);
-        RoutesDefinition routesDefinition = loadRoutesDefinition(context, configInputStream);
+        List<RouteDefinition> routesDefinition = loadRoutesDefinition(camelContext, configInputStream).getRoutes();
 
         // xml routes must be marked as un-prepared as camel-core
         // must do special handling for XML DSL
-        for (RouteDefinition route : routesDefinition.getRoutes()) {
-            RouteDefinitionHelper.prepareRoute(context, route);
+        for (RouteDefinition route : routesDefinition) {
+            RouteDefinitionHelper.prepareRoute(camelContext, route);
             route.markPrepared();
         }
-        routesDefinition.getRoutes().forEach(RouteDefinition::markUnprepared);
+        routesDefinition.forEach(route -> {
+            route.markUnprepared();
+            route.setRouteProperties(List.of(new PropertyDefinition(ChainProperties.DEPLOYMENT_ID, deploymentId)));
+        });
 
         compileGroovyScripts(routesDefinition);
 
-        context.addRouteDefinitions(routesDefinition.getRoutes());
+        camelContext.addRouteDefinitions(routesDefinition);
+        getCache().getDeploymentRoutes().put(deploymentId, routesDefinition);
+        return routesDefinition;
     }
 
-    private void compileGroovyScripts(RoutesDefinition routesDefinition) {
-        for (RouteDefinition route : routesDefinition.getRoutes()) {
+    private void compileGroovyScripts(List<RouteDefinition> routesDefinition) {
+        for (RouteDefinition route : routesDefinition) {
             for (ProcessorDefinition<?> processor : route.getOutputs()) {
                 if (!(processor instanceof ExpressionNode)) {
                     continue;
@@ -694,25 +716,25 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     }
 
     private DeploymentStatus stop(DeploymentInfo deploymentInfo) {
-        String deploymentId = deploymentInfo.getDeploymentId();
-        SpringCamelContext context = getCache().getContexts().remove(deploymentId);
-        if (nonNull(context)) {
-            log.debug("Removing context for deployment: {}", deploymentInfo.getDeploymentId());
-        }
-        stopDeploymentContext(context, deploymentInfo);
+        stopDeploymentContext(deploymentInfo);
         return DeploymentStatus.REMOVED;
     }
 
-    private void stopDeploymentContext(SpringCamelContext context, DeploymentInfo deploymentInfo) {
-        deploymentProcessingService.processStopContext(context, deploymentInfo, null);
-        if (nonNull(context)) {
-            quartzSchedulerService.removeSchedulerJobsFromContexts(
-                Collections.singletonList(context));
-            if (context.isRunning()) {
-                log.debug("Stopping context for deployment: {}", deploymentInfo.getDeploymentId());
-                context.stop();
-            }
+    private void stopDeploymentContext(DeploymentInfo deploymentInfo) {
+        List<RouteDefinition> routeDefinitions = getCache().getDeploymentRoutes().get(deploymentInfo.getDeploymentId());
+        if (CollectionUtils.isEmpty(routeDefinitions)) {
+            return;
         }
+
+        deploymentProcessingService.processStopContext(camelContext, deploymentInfo, null);
+        quartzSchedulerService.removeSchedulerJobsFromRoutes(routeDefinitions, camelContext);
+        try {
+            camelContext.removeRouteDefinitions(routeDefinitions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        getCache().cleanForDeployment(deploymentInfo.getDeploymentId());
+        refreshClassResolver();
     }
 
     public void retryProcessingDeploys() {
@@ -741,24 +763,49 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     }
 
     public void startAllRoutesOnInit() {
-        getCache().getContexts().forEach((deploymentId, context) -> {
-            EngineDeployment state = getCache().getDeployments().get(deploymentId);
+        while (true) {
             try {
-                context.startAllRoutes();
-                log.debug("Deployment {} was resumed from suspend", deploymentId);
-            } catch (Exception e) {
+                camelContext.start();
+                log.debug("CamelContext has been started");
+                getCache().getDeployments().entrySet().stream().forEach(entry -> {
+                    EngineDeployment state = entry.getValue();
+                    if (state != null) {
+                        state.setSuspended(false);
+                    }
+                });
+                break;
+            } catch (FailedToCreateRouteException | FailedToStartRouteException e) {
+                String routeId = e instanceof FailedToCreateRouteException
+                        ? ((FailedToCreateRouteException) e).getRouteId() : ((FailedToStartRouteException) e).getRouteId();
+                Optional<String> deploymentId = getCache().getDeploymentIdByRouteId(routeId);
+                List<RouteDefinition> routesToStop = deploymentId.map(id -> getCache().getDeploymentRoutes().get(id)).orElse(null);
+                if (CollectionUtils.isEmpty(routesToStop)) {
+                    throw new RuntimeException(String.format("Failed to find routes for deploymentId %s to stop error deployment at application startup, error route is %s",
+                            deploymentId.orElse("null"), routeId), e);
+                }
+                log.error("Failed to start deployment {} during startup ", deploymentId.get(), e);
+                EngineDeployment state = getCache().getDeployments().get(deploymentId.get());
                 if (state != null) {
                     state.setStatus(DeploymentStatus.FAILED);
-                    state.setErrorMessage("Deployment wasn't initialized correctly during pod startup " + e.getMessage());
+                    state.setErrorMessage(e.getMessage());
                 }
-                ErrorCode errorCode = ErrorCode.DEPLOYMENT_START_ERROR;
-                log.error(errorCode, errorCode.compileMessage(deploymentId), e);
-            } finally {
-                if (state != null) {
-                    state.setSuspended(false);
+                try {
+                    camelContext.removeRouteDefinitions(routesToStop);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
+            } catch (Exception e) {
+                log.error("CamelContext unable to startup", e);
+                getCache().getDeployments().entrySet().stream().forEach(entry -> {
+                    EngineDeployment state = entry.getValue();
+                    if (state != null) {
+                        state.setStatus(DeploymentStatus.FAILED);
+                        state.setErrorMessage("All deployments failed during pod startup " + e.getMessage());
+                    }
+                });
+                throw e;
             }
-        });
+        }
     }
 
     private void runInProcessLock(Runnable callback) {

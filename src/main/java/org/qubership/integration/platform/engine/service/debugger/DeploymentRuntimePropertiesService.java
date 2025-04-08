@@ -18,6 +18,7 @@ package org.qubership.integration.platform.engine.service.debugger;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
+import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.qubership.integration.platform.engine.model.constants.CamelConstants.Properties;
 import org.qubership.integration.platform.engine.model.deployment.properties.CamelDebuggerProperties;
 import org.qubership.integration.platform.engine.model.deployment.properties.DeploymentRuntimeProperties;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component
-public class CamelDebuggerPropertiesService {
+public class DeploymentRuntimePropertiesService {
 
     // <deployment_id, debugger_props(deployment & chain)>
     private final Map<String, AtomicReference<CamelDebuggerProperties>> deployPropertiesCache =
@@ -49,7 +50,9 @@ public class CamelDebuggerPropertiesService {
             .computeIfAbsent(deploymentId, k -> new AtomicReference<>(null));
     }
 
-    public CamelDebuggerProperties getProperties(Exchange exchange, String deploymentId) {
+    public CamelDebuggerProperties getProperties(Exchange exchange) {
+        String deploymentId = getDeploymentId(exchange);
+
         CamelDebuggerProperties deployProperties = getActualProperties(deploymentId);
         DeploymentRuntimeProperties runtimeProperties = exchange.getProperty(
             Properties.DEPLOYMENT_RUNTIME_PROPERTIES_MAP_PROP, DeploymentRuntimeProperties.class);
@@ -76,5 +79,10 @@ public class CamelDebuggerPropertiesService {
 
     public void removeDeployProperties(String deploymentId) {
         deployPropertiesCache.remove(deploymentId);
+    }
+
+    public static String getDeploymentId(Exchange exchange) {
+        return (String) exchange.getContext().getRoute(exchange.getFromRouteId())
+                .getProperties().get(CamelConstants.ChainProperties.DEPLOYMENT_ID);
     }
 }

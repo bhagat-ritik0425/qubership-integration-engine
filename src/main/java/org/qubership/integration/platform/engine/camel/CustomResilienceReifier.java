@@ -26,6 +26,7 @@ import org.apache.camel.Route;
 import org.apache.camel.component.resilience4j.ResilienceProcessor;
 import org.apache.camel.component.resilience4j.ResilienceReifier;
 import org.apache.camel.model.CircuitBreakerDefinition;
+import org.qubership.integration.platform.engine.model.constants.CamelConstants;
 import org.qubership.integration.platform.engine.model.logging.LogLoggingLevel;
 import org.qubership.integration.platform.engine.service.debugger.CamelDebugger;
 
@@ -123,10 +124,19 @@ public class CustomResilienceReifier extends ResilienceReifier {
     }
 
     private static LogLoggingLevel getLoggingLevel(ResilienceProcessor processor) {
-        return Optional.ofNullable(processor.getCamelContext().getDebugger())
-                .map(CamelDebugger.class::cast)
-                .map(CamelDebugger::getRelatedProperties)
-                .map(properties -> properties.getActualRuntimeProperties().getLogLoggingLevel())
-                .orElse(LogLoggingLevel.WARN);
+        String deploymentId = Optional.ofNullable(processor.getCamelContext().getRoute(processor.getRouteId()).getProperties())
+                .map(p -> p.get(CamelConstants.ChainProperties.DEPLOYMENT_ID))
+                .map(String.class::cast)
+                .orElse(null);
+
+        if (deploymentId != null) {
+            return Optional.ofNullable(processor.getCamelContext().getDebugger())
+                    .map(CamelDebugger.class::cast)
+                    .map(d -> d.getRelatedProperties(deploymentId))
+                    .map(properties -> properties.getActualRuntimeProperties().getLogLoggingLevel())
+                    .orElse(LogLoggingLevel.WARN);
+        }
+
+        return LogLoggingLevel.WARN;
     }
 }

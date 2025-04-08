@@ -30,7 +30,7 @@ import org.qubership.integration.platform.engine.model.logging.SessionsLoggingLe
 import org.qubership.integration.platform.engine.service.ExecutionStatus;
 import org.qubership.integration.platform.engine.service.SdsService;
 import org.qubership.integration.platform.engine.service.debugger.CamelDebugger;
-import org.qubership.integration.platform.engine.service.debugger.CamelDebuggerPropertiesService;
+import org.qubership.integration.platform.engine.service.debugger.DeploymentRuntimePropertiesService;
 import org.qubership.integration.platform.engine.service.debugger.kafkareporting.SessionsKafkaReportingService;
 import org.qubership.integration.platform.engine.service.debugger.logging.ChainLogger;
 import org.qubership.integration.platform.engine.service.debugger.metrics.MetricsService;
@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ChainFinishProcessor implements Processor {
 
     private final MetricsService metricsService;
-    private final CamelDebuggerPropertiesService propertiesService;
+    private final DeploymentRuntimePropertiesService propertiesService;
     private final SessionsService sessionsService;
     private final Optional<SessionsKafkaReportingService> sessionsKafkaReportingService;
     private final Optional<SdsService> sdsService;
@@ -65,7 +65,7 @@ public class ChainFinishProcessor implements Processor {
 
     @Autowired
     public ChainFinishProcessor(MetricsService metricsService,
-                                CamelDebuggerPropertiesService propertiesService,
+                                DeploymentRuntimePropertiesService propertiesService,
                                 SessionsService sessionsService,
                                 Optional<SessionsKafkaReportingService> sessionsKafkaReportingService,
                                 Optional<SdsService> sdsService,
@@ -82,23 +82,24 @@ public class ChainFinishProcessor implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
         AtomicInteger sessionActiveThreadCounter = exchange.getProperty(
-            Properties.SESSION_ACTIVE_THREAD_COUNTER, null, AtomicInteger.class);
+                Properties.SESSION_ACTIVE_THREAD_COUNTER, null, AtomicInteger.class);
         if (sessionActiveThreadCounter == null) {
             log.error("Property {} is null, please re-create snapshot and redeploy related chain",
-                Properties.SESSION_ACTIVE_THREAD_COUNTER);
+                    Properties.SESSION_ACTIVE_THREAD_COUNTER);
         }
 
         long currentThreadId = Thread.currentThread().threadId();
         ExecutionStatus currentExchangeStatus = DebuggerUtils.extractExecutionStatus(exchange);
         Map<Long, ExecutionStatus> threadsStatuses =
-            exchange.getProperty(Properties.THREAD_SESSION_STATUSES, Map.class);
+                exchange.getProperty(Properties.THREAD_SESSION_STATUSES, Map.class);
         if (threadsStatuses == null) {
             log.warn("Can't find thread session statuses for current thread {}", currentThreadId);
             threadsStatuses = new HashMap<>();
         }
         threadsStatuses.put(currentThreadId, currentExchangeStatus);
 
-        String sessionId = exchange.getProperty(CamelConstants.Properties.SESSION_ID, String.class);
+        String sessionId = exchange.getProperty(CamelConstants.Properties.SESSION_ID)
+                .toString();
         Boolean isMainExchange = exchange.getProperty(Properties.IS_MAIN_EXCHANGE, false, Boolean.class);
 
         if (isMainExchange) {
@@ -112,8 +113,7 @@ public class ChainFinishProcessor implements Processor {
         // finish session if this is the last thread
         if (sessionActiveThreadCounter == null || sessionActiveThreadCounter.decrementAndGet() <= 0) {
             CamelDebugger camelDebugger = ((CamelDebugger) exchange.getContext().getDebugger());
-            CamelDebuggerProperties dbgProperties = propertiesService.getProperties(exchange,
-                    camelDebugger.getDeploymentId());
+            CamelDebuggerProperties dbgProperties = propertiesService.getProperties(exchange);
 
             ExecutionStatus executionStatus = ExecutionStatus.COMPLETED_NORMALLY;
             for (Entry<Long, ExecutionStatus> entry : threadsStatuses.entrySet()) {
@@ -121,16 +121,16 @@ public class ChainFinishProcessor implements Processor {
             }
 
             String started = exchange.getProperty(CamelConstants.Properties.START_TIME,
-                String.class);
+                    String.class);
             String finished = LocalDateTime.now().toString();
             DeploymentRuntimeProperties runtimeProperties = dbgProperties.getRuntimeProperties(exchange);
             SessionsLoggingLevel sessionLevel = runtimeProperties.calculateSessionLevel(exchange);
             long duration = Duration.between(LocalDateTime.parse(started),
-                LocalDateTime.parse(finished)).toMillis();
+                    LocalDateTime.parse(finished)).toMillis();
 
             if (ExecutionStatus.COMPLETED_WITH_ERRORS.equals(executionStatus) && (
-                sessionLevel == SessionsLoggingLevel.ERROR
-                    || sessionLevel == SessionsLoggingLevel.INFO)) {
+                    sessionLevel == SessionsLoggingLevel.ERROR
+                            || sessionLevel == SessionsLoggingLevel.INFO)) {
                 String sessionElementId = sessionsService.moveFromSingleElCacheToCommonCache(sessionId);
 
                 if (StringUtils.isNotEmpty(sessionElementId)) {
@@ -181,14 +181,14 @@ public class ChainFinishProcessor implements Processor {
             if (runtimeProperties.isDptEventsEnabled() && sessionsKafkaReportingService.isPresent()) {
                 try {
                     String parentSessionId = exchange.getProperty(
-                        CamelConstants.Properties.CHECKPOINT_INTERNAL_PARENT_SESSION_ID,
-                        String.class);
+                            CamelConstants.Properties.CHECKPOINT_INTERNAL_PARENT_SESSION_ID,
+                            String.class);
                     String originalSessionId = exchange.getProperty(
-                        CamelConstants.Properties.CHECKPOINT_INTERNAL_ORIGINAL_SESSION_ID,
-                        String.class);
+                            CamelConstants.Properties.CHECKPOINT_INTERNAL_ORIGINAL_SESSION_ID,
+                            String.class);
                     sessionsKafkaReportingService.get().sendFinishedEvent(exchange, dbgProperties, sessionId,
-                        originalSessionId, parentSessionId,
-                        executionStatus);
+                            originalSessionId, parentSessionId,
+                            executionStatus);
                 } catch (Exception e) {
                     log.error("Failed to send DPT events", e);
                 }
@@ -208,7 +208,7 @@ public class ChainFinishProcessor implements Processor {
 
             try {
                 metricsService.processSessionFinish(dbgProperties, executionStatus.toString(),
-                    duration);
+                        duration);
             } catch (Exception e) {
                 log.warn("Failed to create metrics data", e);
             }
@@ -218,7 +218,7 @@ public class ChainFinishProcessor implements Processor {
                 if (sdsService.isPresent()) {
                     if (ExecutionStatus.COMPLETED_WITH_ERRORS.equals(executionStatus)) {
                         sdsService.get().setJobInstanceFailed(sdsExecutionId,
-                            DebuggerUtils.getExceptionFromExchange(exchange));
+                                DebuggerUtils.getExceptionFromExchange(exchange));
                     } else {
                         sdsService.get().setJobInstanceFinished(sdsExecutionId);
                     }

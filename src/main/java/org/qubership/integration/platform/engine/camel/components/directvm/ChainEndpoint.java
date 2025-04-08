@@ -27,7 +27,7 @@ import org.apache.camel.support.DefaultEndpoint;
         syntax = "cip-chain:name",
         category = { Category.CORE }
 )
-public class ChainEndpoint extends DefaultEndpoint implements AsyncEndpoint {
+public class ChainEndpoint extends DefaultEndpoint implements AsyncEndpoint, MultipleConsumersSupport {
 
     @UriPath(description = "Name of direct-vm endpoint")
     @Metadata(required = true)
@@ -137,4 +137,8 @@ public class ChainEndpoint extends DefaultEndpoint implements AsyncEndpoint {
         this.propagateProperties = propagateProperties;
     }
 
+    @Override
+    public boolean isMultipleConsumersSupported() {
+        return true;
+    }
 }
