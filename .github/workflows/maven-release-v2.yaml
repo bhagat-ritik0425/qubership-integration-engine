@@ -38,7 +38,7 @@ jobs:
   dry-run-build:
     runs-on: ubuntu-latest
     steps:
-      - name: "Build and Publish"
+      - name: "Build and Publish current SNAPSHOT (dry run)"
         uses: netcracker/qubership-workflow-hub/actions/maven-release@feature/maven-release-plugin
         with:
           version-type: ${{ github.event.inputs.version-type }}
