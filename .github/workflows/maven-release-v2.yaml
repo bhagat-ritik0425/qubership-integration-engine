@@ -46,6 +46,7 @@ jobs:
           ref: ${{ github.ref }}
           maven-args: ${{ inputs.mvn-args }}
           profile: ${{ inputs.profile }}
+          server-id: ${{ inputs.profile }}
           token: ${{ secrets.GITHUB_TOKEN }}
           maven-user: ${{ inputs.profile == 'github' && github.actor || secrets.MAVEN_USER }}
           maven-password: ${{ inputs.profile == 'github' && secrets.GITHUB_TOKEN || secrets.MAVEN_PASSWORD }}
