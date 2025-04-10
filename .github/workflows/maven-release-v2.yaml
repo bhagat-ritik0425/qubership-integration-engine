@@ -47,8 +47,10 @@ jobs:
           maven-args: ${{ inputs.mvn-args }}
           profile: ${{ inputs.profile }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          maven-user: ${{ inputs.profile == 'github' && github.actor || secrets.MAVEN_USER }}
+          maven-password: ${{ inputs.profile == 'github' && secrets.GITHUB_TOKEN || secrets.MAVEN_PASSWORD }}
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           dry-run: 'true'
 #   deploy:
 #     needs: dry-run-build
