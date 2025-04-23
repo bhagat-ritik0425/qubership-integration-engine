@@ -66,6 +66,7 @@ public enum ChainElementType {
     SPLIT_ASYNC_2("split-async-2"),
     ASYNC_SPLIT_ELEMENT_2("async-split-element-2"),
     FINALLY_2("finally-2"),
+    KAMELET("kamelet"),
     UNKNOWN("");
     // add more elements as needed
 

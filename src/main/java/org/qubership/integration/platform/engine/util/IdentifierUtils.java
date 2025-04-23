@@ -19,6 +19,7 @@ package org.qubership.integration.platform.engine.util;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.Exchange;
 import org.apache.camel.NamedNode;
+import org.apache.camel.spi.CamelEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.qubership.integration.platform.engine.model.ElementIdentifier;
@@ -41,6 +42,7 @@ public final class IdentifierUtils {
     private static final int MAX_ROUTE_IDENTIFIER_PARTS = 3;
 
     private static final Pattern REQUEST_ATTEMPT_ID_PATTERN = Pattern.compile("Request attempt--([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})");
+    private static final String DEFAULT_CAMEL_STEP = "step";
 
     private IdentifierUtils() {
     }
@@ -151,4 +153,28 @@ public final class IdentifierUtils {
     public static String getServiceCallRetryPropertyName(String elementId) {
         return String.format("internalProperty_serviceCall_%s_Retry", elementId);
     }
+
+    public static boolean isDefaultKameletStep(CamelEvent.ExchangeEvent event) {
+        switch (event) {
+            case CamelEvent.StepStartedEvent evs -> {
+                return checkStepName((CamelEvent.StepEvent) event);
+            }
+            case CamelEvent.StepCompletedEvent evc -> {
+                return checkStepName((CamelEvent.StepEvent) event);
+            }
+            case CamelEvent.FailureEvent evc -> {
+                //TODO Mb we need not to skip fail kamelet steps and process it with modified stepId
+                return checkStepName((CamelEvent.StepEvent) event);
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    private static boolean checkStepName(CamelEvent.StepEvent event) {
+        return event.getStepId().startsWith(DEFAULT_CAMEL_STEP);
+    }
+
+
 }

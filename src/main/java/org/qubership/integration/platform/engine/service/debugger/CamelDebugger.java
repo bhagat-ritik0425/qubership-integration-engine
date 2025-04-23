@@ -121,14 +121,16 @@ public class CamelDebugger extends DefaultDebugger {
     public boolean onEvent(Exchange exchange, ExchangeEvent event) {
         CamelDebuggerProperties dbgProperties = getRelatedProperties(exchange);
 
-        switch (event) {
-            case ExchangeCreatedEvent ev -> exchangeCreated(exchange, dbgProperties);
-            case StepStartedEvent ev -> stepStarted(exchange, (StepEvent) event, dbgProperties);
-            case StepCompletedEvent ev -> stepFinished(exchange, (StepEvent) event, dbgProperties, false);
-            case StepFailedEvent ev -> stepFinished(exchange, (StepEvent) event, dbgProperties, true);
-            case ExchangeCompletedEvent ev -> exchangeFinished(exchange);
-            case ExchangeFailedEvent ev -> exchangeFinished(exchange);
-            default -> {
+        if (!IdentifierUtils.isDefaultKameletStep(event)) {
+            switch (event) {
+                case ExchangeCreatedEvent ev -> exchangeCreated(exchange, dbgProperties);
+                case StepStartedEvent ev -> stepStarted(exchange, (StepEvent) event, dbgProperties);
+                case StepCompletedEvent ev -> stepFinished(exchange, (StepEvent) event, dbgProperties, false);
+                case StepFailedEvent ev -> stepFinished(exchange, (StepEvent) event, dbgProperties, true);
+                case ExchangeCompletedEvent ev -> exchangeFinished(exchange);
+                case ExchangeFailedEvent ev -> exchangeFinished(exchange);
+                default -> {
+                }
             }
         }
 
