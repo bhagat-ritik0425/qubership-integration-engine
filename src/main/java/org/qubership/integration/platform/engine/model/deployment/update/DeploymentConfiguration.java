@@ -31,4 +31,5 @@ public class DeploymentConfiguration {
     private List<ElementProperties> properties;
     @Builder.Default
     private List<DeploymentRouteUpdate> routes = new ArrayList<>(0);
+    private List<String> kamelets = new ArrayList<>(0);
 }

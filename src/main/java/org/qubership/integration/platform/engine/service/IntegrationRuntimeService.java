@@ -16,6 +16,11 @@
 
 package org.qubership.integration.platform.engine.service;
 
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.dsl.yaml.KameletRoutesBuilderLoader;
+import org.apache.camel.impl.engine.DefaultResourceResolvers;
+import org.apache.camel.spi.*;
+import org.qubership.integration.platform.engine.camel.QipCustomClassResolver;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import org.apache.camel.component.jackson.JacksonConstants;
@@ -137,6 +142,8 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
     private boolean enableStreamCaching;
 
     private final int streamCachingBufferSize;
+    private final KameletRoutesBuilderLoader loaderSupport = new KameletRoutesBuilderLoader();
+    private final DefaultResourceResolvers.MemResolver memResolver = new DefaultResourceResolvers.MemResolver();
 
     @Autowired
     public IntegrationRuntimeService(ServerConfiguration serverConfiguration,
@@ -590,6 +597,7 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
 
         deploymentProcessingService.processAfterContextCreated(context, deploymentInfo, deploymentConfiguration);
 
+        this.loadKameletsResources(context, deploymentConfiguration.getKamelets());
         this.loadRoutes(context, configurationXml);
         return context;
     }
@@ -651,6 +659,27 @@ public class IntegrationRuntimeService implements ApplicationContextAware {
         compileGroovyScripts(routesDefinition);
 
         context.addRouteDefinitions(routesDefinition.getRoutes());
+    }
+
+    private void loadKameletsResources(SpringCamelContext context, List<String> kamelets) throws Exception {
+        for (String kamelet : kamelets) {
+
+            Resource kameletResource = memResolver.createResource("", kamelet);
+
+            RouteBuilder routeBuilder = loaderSupport.doLoadRouteBuilder(kameletResource);
+            routeBuilder.configure();
+
+            context.addTemplatedRoutes(routeBuilder);
+
+            routeBuilder.getRouteTemplateCollection().getRouteTemplates().forEach(routeTemplateDefinition -> {
+                try {
+                    context.addRouteTemplateDefinition(routeTemplateDefinition);
+                } catch (Exception e) {
+                    throw new DeploymentRetriableException("Failed to add Kamelet Template Definition", e);
+
+                }
+            });
+        }
     }
 
     private void compileGroovyScripts(RoutesDefinition routesDefinition) {
