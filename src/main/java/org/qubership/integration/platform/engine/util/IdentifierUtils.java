@@ -157,14 +157,16 @@ public final class IdentifierUtils {
     public static boolean isDefaultKameletStep(CamelEvent.ExchangeEvent event) {
         switch (event) {
             case CamelEvent.StepStartedEvent evs -> {
-                return checkStepName((CamelEvent.StepEvent) event);
+                String stepId = evs.getStepId();
+                return checkStepName(stepId);
             }
             case CamelEvent.StepCompletedEvent evc -> {
-                return checkStepName((CamelEvent.StepEvent) event);
+                String stepId = evc.getStepId();
+                return checkStepName(stepId);
             }
             case CamelEvent.FailureEvent evc -> {
                 //TODO Mb we need not to skip fail kamelet steps and process it with modified stepId
-                return checkStepName((CamelEvent.StepEvent) event);
+                return false;
             }
             default -> {
                 return false;
@@ -172,8 +174,8 @@ public final class IdentifierUtils {
         }
     }
 
-    private static boolean checkStepName(CamelEvent.StepEvent event) {
-        return event.getStepId().startsWith(DEFAULT_CAMEL_STEP);
+    private static boolean checkStepName(String stepId) {
+        return stepId.startsWith(DEFAULT_CAMEL_STEP);
     }
 
 
