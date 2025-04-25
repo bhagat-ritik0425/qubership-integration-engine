@@ -17,7 +17,6 @@
 package org.qubership.integration.platform.engine.mapper.atlasmap;
 
 import io.atlasmap.api.AtlasException;
-import io.atlasmap.api.AtlasValidationException;
 import io.atlasmap.core.AtlasPath;
 import io.atlasmap.core.AtlasUtil;
 import io.atlasmap.core.BaseAtlasModule;

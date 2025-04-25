@@ -16,20 +16,19 @@
 
 package org.qubership.integration.platform.engine.service;
 
-import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.dsl.yaml.KameletRoutesBuilderLoader;
-import org.apache.camel.impl.engine.DefaultResourceResolvers;
-import org.apache.camel.spi.*;
-import org.qubership.integration.platform.engine.camel.QipCustomClassResolver;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonConstants;
+import org.apache.camel.dsl.yaml.KameletRoutesBuilderLoader;
 import org.apache.camel.impl.engine.DefaultManagementStrategy;
+import org.apache.camel.impl.engine.DefaultResourceResolvers;
 import org.apache.camel.impl.engine.DefaultStreamCachingStrategy;
 import org.apache.camel.model.*;
 import org.apache.camel.model.language.ExpressionDefinition;
 import org.apache.camel.observation.MicrometerObservationTracer;
 import org.apache.camel.reifier.ProcessorReifier;
+import org.apache.camel.spi.*;
 import org.apache.camel.spi.ClassResolver;
 import org.apache.camel.spi.MessageHistoryFactory;
 import org.apache.camel.spring.SpringCamelContext;
@@ -38,6 +37,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.jetbrains.annotations.NotNull;
 import org.qubership.integration.platform.engine.camel.CustomResilienceReifier;
+import org.qubership.integration.platform.engine.camel.QipCustomClassResolver;
 import org.qubership.integration.platform.engine.camel.QipCustomClassResolver;
 import org.qubership.integration.platform.engine.camel.context.propagation.constant.BusinessIds;
 import org.qubership.integration.platform.engine.camel.converters.FormDataConverter;
