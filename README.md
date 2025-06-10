@@ -9,7 +9,7 @@ This service:
 - Records sessions of integration chains' execution. These records can be later accessed via [Sessions Management](https://github.com/Netcracker/qubership-integration-sessions-management) service.
 - Collects various metrics of integration chains execution.
 
-Engine service uses [Apache Camel](https://camel.apache.org/) for defining and execution of integration logic. 
+Engine service uses [Apache Camel](https://camel.apache.org/) for defining and execution of integration logic.
 
 Engine service publishes integration chains' deployment state to Consul.
 
@@ -29,7 +29,7 @@ Application parameters can be set by environment variables.
 | Environment variable                | Default value                                        | Description                                                                                                                  |
 |-------------------------------------|------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
 | ROOT_LOG_LEVEL                      | INFO                                                 | Logging level                                                                                                                |
-| CONSUL_URL                          | http://consul:8500                                   | Consul URL                                                                                                                   |
+| CONSUL_URL                          | `http://consul:8500`                                 | Consul URL                                                                                                                   |
 | CONSUL_ADMIN_TOKEN                  |                                                      | Consul assess token                                                                                                          |
 | KUBE_TOKEN_PATH                     | /var/run/secrets/kubernetes.io/serviceaccount/token  | Kubernetes token path                                                                                                        |
 | KUBE_CERT_PATH                      | /var/run/secrets/kubernetes.io/serviceaccount/ca.crt | Kubernetes certificate path                                                                                                  |
@@ -59,12 +59,12 @@ Application parameters can be set by environment variables.
 | MONITORING_ENABLED                  | false                                                |                                                                                                                              |
 | IDEMPOTENCY_ENABLED                 | false                                                | Enables idempotency support on triggers. Requires Redis service.                                                             |
 | REDIS_HOST                          | redis                                                | Redis host                                                                                                                   |
-| REDIS_PORT                          | 6379                                                 | Redis port                                                                                                                   | 
+| REDIS_PORT                          | 6379                                                 | Redis port                                                                                                                   |
 | REDIS_USER                          |                                                      | Redis username                                                                                                               |
 | REDIS_PASSWORD                      |                                                      | Redis password                                                                                                               |
 | CAMEL_KAFKA_PREDEPLOY_CHECK_ENABLED | true                                                 | Enables predeploy check for Kafka elements.                                                                                  |
 | CAMEL_AMQP_PREDEPLOY_CHECK_ENABLED  | true                                                 | Enables predeploy check for AMQP elements.                                                                                   |
-| RUNTIME_CATALOG_SERVICE_URL         | http://runtime-catalog:8080                          | Runtime Catalog Service URL.                                                                                                 |
+| RUNTIME_CATALOG_SERVICE_URL         | `http://runtime-catalog:8080`                        | Runtime Catalog Service URL.                                                                                                 |
 
 
 Configuration can be overridden with values stored in Consul.
