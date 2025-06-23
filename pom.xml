@@ -55,6 +55,16 @@
         <qip-checkstyle-revision>0.0.2</qip-checkstyle-revision>
     </properties>
 
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/netcracker/*</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
 
@@ -280,6 +290,12 @@
     </distributionManagement>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.qubership.cloud</groupId>
+            <artifactId>blue-green-state-monitor-java</artifactId>
+            <version>1.0.4</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
