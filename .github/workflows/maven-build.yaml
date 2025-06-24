@@ -14,4 +14,3 @@ jobs:
       sonar-project-key: ${{ vars.SONAR_PROJECT_KEY }}
     secrets:
       sonar-token: ${{ secrets.SONAR_TOKEN }}
-      maven-token: ${{ secrets.GH_ACCESS_TOKEN }}
