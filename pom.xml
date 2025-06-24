@@ -58,8 +58,13 @@
     <repositories>
         <repository>
             <id>github</id>
-            <url>https://maven.pkg.github.com/netcracker/</url>
-            <snapshots />
+            <url>https://maven.pkg.github.com/Netcracker/*</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
         </repository>
     </repositories>
 
@@ -297,7 +302,7 @@
 
         <dependency>
             <groupId>org.qubership.cloud</groupId>
-            <artifactId>blue-green-state-monitor-java</artifactId>
+            <artifactId>blue-green-state-monitor-spring</artifactId>
             <version>1.0.4</version>
         </dependency>
 
